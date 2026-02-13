@@ -1,26 +1,110 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import Header from './components/Layout/Header';
+import Sidebar from './components/Layout/Sidebar';
+import MobileBottomNav from './components/Layout/MobileBottomNav';
+import ErrorBoundary from './components/ErrorBoundary';
+import HomePage from './pages/HomePage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import DetectDisease from './pages/DetectDisease';
+import CommunityFeed from './pages/CommunityFeed';
+import News from './pages/News';
+import Chatbot from './pages/Chatbot';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ModelTraining from './pages/admin/ModelTraining';
+import DataManagement from './pages/admin/DataManagement';
+import UserManagement from './pages/admin/UserManagement';
+import AdminSettings from './pages/admin/AdminSettings';
+import Settings from './pages/Settings';
+import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+const AppContent: React.FC = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  // Role-based homepage component
+  const HomePage: React.FC = () => {
+    if (user?.role === 'admin') {
+      return <Dashboard />;
+    }
+    return <CommunityFeed />;
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <Header 
+        onMenuClick={() => setSidebarOpen(true)} 
+        title="CornLeaf AI" 
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 overflow-y-auto lg:ml-0">
+          <div className="w-full p-4 sm:p-6 lg:p-8">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/detect" element={<DetectDisease />} />
+              <Route path="/feed" element={<CommunityFeed />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/chatbot" element={<Chatbot />} />
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/training" element={
+                <ProtectedRoute requireAdmin>
+                  <ModelTraining />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/data" element={
+                <ProtectedRoute requireAdmin>
+                  <DataManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/users" element={
+                <ProtectedRoute requireAdmin>
+                  <UserManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/settings" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </main>
+      </div>
+      <MobileBottomNav />
     </div>
   );
-}
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
+  );
+};
 
 export default App;
