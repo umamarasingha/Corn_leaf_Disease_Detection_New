@@ -8,17 +8,19 @@ import {
   Settings 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MobileBottomNav: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/detect', icon: Camera, label: 'Detect' },
-    { path: '/feed', icon: Users, label: 'Feed' },
-    { path: '/chatbot', icon: MessageSquare, label: 'Chat' },
+    { path: '/', icon: Home, label: t('Home') },
+    { path: '/detect', icon: Camera, label: t('Detect') },
+    { path: '/feed', icon: Users, label: t('Feed') },
+    { path: '/chatbot', icon: MessageSquare, label: t('Chat') },
   ];
 
   const isActivePath = (path: string) => {
@@ -71,7 +73,7 @@ const MobileBottomNav: React.FC = () => {
         >
           <Settings className={`h-5 w-5 mb-1 ${location.pathname.includes('/settings') ? 'text-primary-600' : 'text-gray-400'}`} />
           <span className={`text-xs font-medium ${location.pathname.includes('/settings') ? 'text-primary-600' : 'text-gray-400'}`}>
-            Settings
+            {t('Settings')}
           </span>
         </button>
       </div>

@@ -102,6 +102,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('token', response.token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user: response.user, token: response.token } });
     } catch (error) {
+      // Log error details for debugging
+      console.error('AuthContext login error:', error);
       dispatch({ type: 'LOGIN_FAILURE' });
       throw error;
     }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, Leaf, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Leaf, Mail, Lock, User } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +15,7 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,7 +28,7 @@ const Register: React.FC = () => {
       navigate('/');
     } catch (err: any) {
       console.error('Registration error:', err);
-      let errorMessage = 'Registration failed. Please try again.';
+      let errorMessage = t('Registration failed. Please try again.');
       
       if (err.response) {
         if (err.response.status === 409) {
@@ -35,9 +37,10 @@ const Register: React.FC = () => {
           errorMessage = err.response.data?.error || 'Please check your input and try again.';
         } else if (err.response.status === 500) {
           errorMessage = 'Server error. Please try again later.';
+          errorMessage = t('Server error. Please try again later.');
         }
       } else if (err.request) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+        errorMessage = t('Network error. Please check your connection and try again.');
       }
       
       setError(errorMessage);
@@ -54,7 +57,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4 relative">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-primary-500 to-primary-600 p-6 text-white">
           <div className="flex items-center justify-center mb-4">
@@ -62,16 +65,16 @@ const Register: React.FC = () => {
               <Leaf className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-center">Create Account</h1>
+          <h1 className="text-2xl font-bold text-center">{t('Create Account')}</h1>
           <p className="text-center text-white/80 mt-2">
-            Join our community of farmers
+            {t('Join our community of farmers')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
+              {t('Full Name')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -82,14 +85,14 @@ const Register: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your full name"
+                placeholder={t('Enter your full name')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
+              {t('Email Address')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -100,14 +103,14 @@ const Register: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your email"
+                placeholder={t('Enter your email')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('Password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -118,7 +121,7 @@ const Register: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your password"
+                placeholder={t('Enter your password')}
               />
               <button
                 type="button"
@@ -147,10 +150,10 @@ const Register: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Creating account...
+                {t('Creating account...')}
               </span>
             ) : (
-              'Create Account'
+              t('Create Account')
             )}
           </button>
         </form>
@@ -161,7 +164,7 @@ const Register: React.FC = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or</span>
+              <span className="px-2 bg-white text-gray-500">{t('Or')}</span>
             </div>
           </div>
 
@@ -170,7 +173,7 @@ const Register: React.FC = () => {
               to="/login"
               className="text-primary-600 hover:text-primary-700 font-medium text-sm"
             >
-              Already have an account? Sign in
+              {t('Already have an account?')} {t('Sign in')}
             </Link>
           </div>
 

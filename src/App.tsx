@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import MobileBottomNav from './components/Layout/MobileBottomNav';
@@ -10,10 +11,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import DetectDisease from './pages/DetectDisease';
 import CommunityFeed from './pages/CommunityFeed';
-import News from './pages/News';
 import Chatbot from './pages/Chatbot';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ModelTraining from './pages/admin/ModelTraining';
@@ -26,24 +27,32 @@ import ProtectedRoute from './components/ProtectedRoute';
 const AppContent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated, user } = useAuth();
+  const { t } = useLanguage();
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   // Role-based homepage component
   const HomePage: React.FC = () => {
-    if (user?.role === 'admin') {
-      return <Dashboard />;
+    if (user?.role?.toUpperCase() === 'ADMIN') {
+      return <AdminDashboard />;
     }
-    return <CommunityFeed />;
+    return <Dashboard />;
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <Header 
         onMenuClick={() => setSidebarOpen(true)} 
-        title="CornLeaf AI" 
+        title={t('CornLeaf AI')} 
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -53,9 +62,9 @@ const AppContent: React.FC = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<Navigate to="/" replace />} />
               <Route path="/detect" element={<DetectDisease />} />
               <Route path="/feed" element={<CommunityFeed />} />
-              <Route path="/news" element={<News />} />
               <Route path="/chatbot" element={<Chatbot />} />
               <Route path="/admin/dashboard" element={
                 <ProtectedRoute requireAdmin>
@@ -96,13 +105,15 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
-        </AuthProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ErrorBoundary>
+              <AppContent />
+            </ErrorBoundary>
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </Router>
   );
 };

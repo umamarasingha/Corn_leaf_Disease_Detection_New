@@ -111,10 +111,10 @@ const AdminDashboard: React.FC = () => {
   ];
 
   const diseaseData: DiseaseData[] = [
-    { name: 'Northern Leaf Blight', value: 35, color: '#ef4444' },
-    { name: 'Gray Leaf Spot', value: 28, color: '#f59e0b' },
-    { name: 'Common Rust', value: 22, color: '#10b981' },
-    { name: 'Healthy', value: 15, color: '#3b82f6' },
+    { name: 'Northern Leaf Blight', value: 35, color: '#dc2626' },
+    { name: 'Gray Leaf Spot', value: 28, color: '#ea580c' },
+    { name: 'Common Rust', value: 22, color: '#ca8a04' },
+    { name: 'Healthy', value: 15, color: '#16a34a' },
   ];
 
   const chartData: ChartData = {
@@ -129,8 +129,8 @@ const AdminDashboard: React.FC = () => {
       {
         label: 'New Users',
         data: [12, 19, 15, 25, 18, 32, 28],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#059669',
+        backgroundColor: 'rgba(5, 150, 105, 0.1)',
       },
     ],
   };
@@ -225,35 +225,49 @@ const AdminDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            System overview and management controls
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-          </select>
-          <button className="btn-secondary flex items-center space-x-2">
-            <Download className="h-4 w-4" />
-            <span>Export Report</span>
-          </button>
+      {/* Admin Welcome Banner */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-2xl font-bold">Welcome back, {user?.name || 'Admin'}</h1>
+                <span className="px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded-full flex items-center space-x-1">
+                  <Crown className="h-3 w-3" />
+                  <span>ADMIN</span>
+                </span>
+              </div>
+              <p className="text-green-100 mt-1">
+                System is running smoothly • All services operational
+              </p>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center space-x-3">
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              <option value="24h" className="text-gray-800">Last 24 Hours</option>
+              <option value="7d" className="text-gray-800">Last 7 Days</option>
+              <option value="30d" className="text-gray-800">Last 30 Days</option>
+              <option value="90d" className="text-gray-800">Last 90 Days</option>
+            </select>
+            <button className="px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 transition-colors flex items-center space-x-2 font-medium">
+              <Download className="h-4 w-4" />
+              <span>Export Report</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -261,8 +275,8 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-blue-600" />
+            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Users className="h-6 w-6 text-green-600" />
             </div>
             <span className="text-sm text-green-600 font-medium">+12%</span>
           </div>
@@ -275,8 +289,8 @@ const AdminDashboard: React.FC = () => {
 
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Camera className="h-6 w-6 text-green-600" />
+            <div className="h-12 w-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Camera className="h-6 w-6 text-emerald-600" />
             </div>
             <span className="text-sm text-green-600 font-medium">+23%</span>
           </div>
@@ -289,8 +303,8 @@ const AdminDashboard: React.FC = () => {
 
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Brain className="h-6 w-6 text-purple-600" />
+            <div className="h-12 w-12 bg-teal-100 rounded-lg flex items-center justify-center">
+              <Brain className="h-6 w-6 text-teal-600" />
             </div>
             <span className="text-sm text-green-600 font-medium">+2.3%</span>
           </div>
@@ -303,8 +317,8 @@ const AdminDashboard: React.FC = () => {
 
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <FileText className="h-6 w-6 text-orange-600" />
+            <div className="h-12 w-12 bg-lime-100 rounded-lg flex items-center justify-center">
+              <FileText className="h-6 w-6 text-lime-600" />
             </div>
             <span className="text-sm text-green-600 font-medium">+8%</span>
           </div>
@@ -404,16 +418,52 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={index}
                 onClick={action.action}
-                className="flex flex-col items-center space-y-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                className="flex flex-col items-center space-y-3 p-4 rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-colors"
               >
-                <div className="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Icon className="h-6 w-6 text-primary-600" />
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Icon className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="text-center">
                   <h3 className="font-medium text-gray-800 text-sm">{action.label}</h3>
                   <p className="text-xs text-gray-600 mt-1">{action.description}</p>
                 </div>
               </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
+          <button className="text-sm text-green-600 hover:text-green-700 font-medium">
+            View All
+          </button>
+        </div>
+        <div className="space-y-3">
+          {recentActivity.map((activity) => {
+            const Icon = getActivityIcon(activity.type);
+            return (
+              <div
+                key={activity.id}
+                className={`p-4 rounded-lg border-l-4 transition-colors ${getSeverityColor(activity.severity)}`}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-800">
+                        {activity.user}
+                      </p>
+                      <span className="text-xs text-gray-500">{activity.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{activity.action}</p>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>

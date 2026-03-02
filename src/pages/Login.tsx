@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Leaf, Mail, Lock, User } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +17,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { login, register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +33,26 @@ const Login: React.FC = () => {
       }
       navigate('/');
     } catch (err: any) {
-      console.error('Auth error:', err);
-      let errorMessage = isLogin ? 'Invalid email or password' : 'Registration failed. Please try again.';
+      // Comprehensive error logging
+      console.error('=== AUTH ERROR DETAILS ===');
+      console.error('Error type:', err?.name || 'Unknown');
+      console.error('Error message:', err?.message || 'No message');
+      console.error('Error stack:', err?.stack || 'No stack');
+      console.error('Full error object:', err);
+      
+      if (err?.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response data:', err.response.data);
+        console.error('Response headers:', err.response.headers);
+      } else if (err?.request) {
+        console.error('Request made but no response received');
+        console.error('Request details:', err.request);
+      } else {
+        console.error('Error in request setup:', err?.message);
+      }
+      console.error('=== END ERROR DETAILS ===');
+      
+      let errorMessage = isLogin ? t('Invalid email or password') : t('Registration failed. Please try again.');
       
       // More specific error messages
       if (err.response) {
@@ -40,10 +61,10 @@ const Login: React.FC = () => {
         } else if (err.response.status === 400) {
           errorMessage = err.response.data?.error || 'Please check your input and try again.';
         } else if (err.response.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
+          errorMessage = t('Server error. Please try again later.');
         }
       } else if (err.request) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+        errorMessage = t('Network error. Please check your connection and try again.');
       }
       
       setError(errorMessage);
@@ -60,7 +81,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4 relative">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div className="bg-gradient-to-r from-primary-500 to-primary-600 p-6 text-white">
           <div className="flex items-center justify-center mb-4">
@@ -69,12 +90,12 @@ const Login: React.FC = () => {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-center">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            {isLogin ? t('Welcome Back') : t('Create Account')}
           </h1>
           <p className="text-center text-white/80 mt-2">
             {isLogin 
-              ? 'Sign in to detect corn leaf diseases' 
-              : 'Join our community of farmers'
+              ? t('Sign in to detect corn leaf diseases') 
+              : t('Join our community of farmers')
             }
           </p>
         </div>
@@ -83,7 +104,7 @@ const Login: React.FC = () => {
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+                {t('Full Name')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -94,7 +115,7 @@ const Login: React.FC = () => {
                   onChange={handleInputChange}
                   required={!isLogin}
                   className="input-field pl-10"
-                  placeholder="Enter your full name"
+                  placeholder={t('Enter your full name')}
                 />
               </div>
             </div>
@@ -102,7 +123,7 @@ const Login: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
+              {t('Email Address')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -113,14 +134,14 @@ const Login: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className="input-field pl-10"
-                placeholder="Enter your email"
+                placeholder={t('Enter your email')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('Password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -131,7 +152,7 @@ const Login: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 className="input-field pl-10 pr-10"
-                placeholder="Enter your password"
+                placeholder={t('Enter your password')}
               />
               <button
                 type="button"
@@ -141,6 +162,16 @@ const Login: React.FC = () => {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {isLogin && (
+              <div className="mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                >
+                  {t('Forgot password?')}
+                </Link>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -160,12 +191,18 @@ const Login: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {isLogin ? 'Signing in...' : 'Creating account...'}
+                {isLogin ? t('Signing in...') : t('Creating account...')}
               </span>
             ) : (
-              isLogin ? 'Sign In' : 'Create Account'
+              isLogin ? t('Sign In') : t('Create Account')
             )}
           </button>
+
+          {isLogin && (
+            <div className="flex justify-center pt-1">
+              <LanguageSwitcher />
+            </div>
+          )}
         </form>
 
         <div className="px-6 pb-6">
@@ -174,18 +211,18 @@ const Login: React.FC = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or</span>
+              <span className="px-2 bg-white text-gray-500">{t('Or')}</span>
             </div>
           </div>
 
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              {isLogin ? t("Don't have an account?") : t('Already have an account?')}
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="font-medium text-primary-600 hover:text-primary-500 ml-1"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                {isLogin ? t('Sign up') : t('Sign in')}
               </button>
             </p>
           </div>

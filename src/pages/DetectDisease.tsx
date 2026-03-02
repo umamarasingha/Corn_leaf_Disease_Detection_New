@@ -25,6 +25,7 @@ const DetectDisease: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [modelStatus, setModelStatus] = useState<{ loaded: boolean; loading: boolean }>({ 
     loaded: false, 
     loading: true 
@@ -92,7 +93,27 @@ const DetectDisease: React.FC = () => {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    setUploadError(null);
+    
     if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      const fileType = file.type.toLowerCase();
+      
+      if (!validTypes.includes(fileType)) {
+        setUploadError('Invalid file type. Please upload only JPG or PNG images.');
+        event.target.value = ''; // Reset the input
+        return;
+      }
+      
+      // Validate file size (optional: max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        setUploadError('File size too large. Please upload an image smaller than 10MB.');
+        event.target.value = '';
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
@@ -166,6 +187,7 @@ const DetectDisease: React.FC = () => {
     setDetectionResult(null);
     setIsUsingCamera(false);
     setShowCamera(false);
+    setUploadError(null);
   };
 
   const getSeverityColor = (severity: string) => {
@@ -215,13 +237,24 @@ const DetectDisease: React.FC = () => {
                 <Upload className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Upload Image</h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
+              <p className="text-gray-600 text-sm sm:text-base mb-2">
                 Choose an image from your device
               </p>
+              <p className="text-xs text-gray-500 mb-4 sm:mb-6">
+                Accepted formats: JPG, PNG (Max 10MB)
+              </p>
+              {uploadError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600 flex items-center">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    {uploadError}
+                  </p>
+                </div>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleFileUpload}
                 className="hidden"
               />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Bell, X, CheckCircle, AlertTriangle, Info, Users, MessageCircle, Heart } from 'lucide-react';
 import apiService from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Notification {
   id: string;
@@ -18,6 +19,7 @@ interface Notification {
 
 const Notifications: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -25,75 +27,15 @@ const Notifications: React.FC = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        // Mock notifications - in real implementation, fetch from API
-        const mockNotifications: Notification[] = [
-          {
-            id: '1',
-            type: 'warning',
-            title: 'Disease Alert',
-            message: 'Northern Leaf Blight detected in your area. Take preventive measures.',
-            timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-            read: false,
-          },
-          {
-            id: '2',
-            type: 'success',
-            title: 'New Follower',
-            message: 'John Farmer started following you.',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            read: false,
-          },
-          {
-            id: '3',
-            type: 'info',
-            title: 'New Comment',
-            message: 'Mary commented on your post about Gray Leaf Spot treatment.',
-            timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-            read: true,
-            action: {
-              label: 'View Comment',
-              url: '/community'
-            }
-          },
-          {
-            id: '4',
-            type: 'success',
-            title: 'Post Liked',
-            message: '5 people liked your recent post about disease prevention.',
-            timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            read: true,
-          },
-        ];
-        
-        setNotifications(mockNotifications);
-        setUnreadCount(mockNotifications.filter(n => !n.read).length);
+        // Fetch notifications from API - starts empty for new users
+        setNotifications([]);
+        setUnreadCount(0);
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
       }
     };
 
     fetchNotifications();
-    
-    // Simulate real-time notifications
-    const interval = setInterval(() => {
-      // In real implementation, this would use WebSocket or Server-Sent Events
-      const randomNotification = Math.random();
-      if (randomNotification > 0.8) {
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          type: 'info',
-          title: 'New Activity',
-          message: 'There\'s new activity in your community feed.',
-          timestamp: new Date().toISOString(),
-          read: false,
-        };
-        
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-      }
-    }, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
   }, []);
 
   const markAsRead = (notificationId: string) => {
@@ -134,7 +76,7 @@ const Notifications: React.FC = () => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return t('Just now');
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
@@ -160,14 +102,14 @@ const Notifications: React.FC = () => {
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">Notifications</h3>
+              <h3 className="font-semibold text-gray-800">{t('Notifications')}</h3>
               <div className="flex items-center space-x-2">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
                     className="text-sm text-primary-600 hover:text-primary-700"
                   >
-                    Mark all read
+                    {t('Mark all read')}
                   </button>
                 )}
                 <button
@@ -234,7 +176,7 @@ const Notifications: React.FC = () => {
                       onClick={() => markAsRead(notification.id)}
                       className="mt-2 text-xs text-primary-600 hover:text-primary-700"
                     >
-                      Mark as read
+                      {t('Mark as read')}
                     </button>
                   )}
                 </div>
@@ -242,7 +184,7 @@ const Notifications: React.FC = () => {
             ) : (
               <div className="p-8 text-center">
                 <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">No notifications yet</p>
+                <p className="text-gray-600">{t('No notifications yet')}</p>
               </div>
             )}
           </div>

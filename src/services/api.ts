@@ -22,75 +22,101 @@ const api = new Proxy(axiosInstance, {
     // Handle our custom methods
     switch (prop) {
       case 'validateToken':
-        return (token: string) => 
-          axiosInstance.get('/api/auth/validate-token', { 
+        return async (token: string) => {
+          const response = await axiosInstance.get('/api/auth/validate-token', { 
             headers: { Authorization: `Bearer ${token}` } 
           });
+          return response.data;
+        };
           
       case 'login':
-        return (email: string, password: string) => 
-          axiosInstance.post('/api/auth/login', { email, password });
+        return async (email: string, password: string) => {
+          const response = await axiosInstance.post('/api/auth/login', { email, password });
+          return response.data;
+        };
           
       case 'register':
-        return (email: string, password: string, name: string) => 
-          axiosInstance.post('/api/auth/register', { email, password, name });
+        return async (email: string, password: string, name: string) => {
+          const response = await axiosInstance.post('/api/auth/register', { email, password, name });
+          return response.data;
+        };
           
       case 'updateProfile':
-        return (userData: any) => 
-          axiosInstance.put('/api/user/profile', userData);
+        return async (userData: any) => {
+          const response = await axiosInstance.put('/api/user/profile', userData);
+          return response.data;
+        };
           
       case 'changePassword':
-        return (currentPassword: string, newPassword: string) =>
-          axiosInstance.put('/api/user/change-password', { currentPassword, newPassword });
+        return async (currentPassword: string, newPassword: string) => {
+          const response = await axiosInstance.put('/api/user/change-password', { currentPassword, newPassword });
+          return response.data;
+        };
           
       case 'getAdminStats':
-        return () => axiosInstance.get('/api/admin/stats');
+        return async () => {
+          const response = await axiosInstance.get('/api/admin/stats');
+          return response.data;
+        };
         
       case 'getAdminUsers':
-        return () => axiosInstance.get('/api/admin/users');
+        return async () => {
+          const response = await axiosInstance.get('/api/admin/users');
+          return response.data;
+        };
         
       case 'updateUserRole':
-        return (userId: string, role: string) =>
-          axiosInstance.put(`/api/admin/users/${userId}/role`, { role });
+        return async (userId: string, role: string) => {
+          const response = await axiosInstance.put(`/api/admin/users/${userId}/role`, { role });
+          return response.data;
+        };
           
       case 'getUserRoleHistory':
-        return (userId: string) =>
-          axiosInstance.get(`/api/admin/users/${userId}/role-history`);
+        return async (userId: string) => {
+          const response = await axiosInstance.get(`/api/admin/users/${userId}/role-history`);
+          return response.data;
+        };
           
       case 'sendChatMessage':
-        return (message: string) =>
-          axiosInstance.post('/api/chat', { message });
+        return async (message: string) => {
+          const response = await axiosInstance.post('/api/chat', { message });
+          return response.data;
+        };
           
       case 'getPosts':
-        return () => axiosInstance.get('/api/community/posts');
+        return async () => {
+          const response = await axiosInstance.get('/api/community/posts');
+          return response.data;
+        };
         
       case 'createPost':
-        return (title: string, content: string, image?: File) => {
+        return async (title: string, content: string, image?: File) => {
           const formData = new FormData();
           formData.append('title', title);
           formData.append('content', content);
           if (image) {
             formData.append('image', image);
           }
-          return axiosInstance.post('/api/community/posts', formData, {
+          const response = await axiosInstance.post('/api/community/posts', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
+          return response.data;
         };
         
       case 'likePost':
-        return (postId: string) =>
-          axiosInstance.post(`/api/community/posts/${postId}/like`);
-          
-      case 'getNews':
-        return () => axiosInstance.get('/api/news');
+        return async (postId: string) => {
+          const response = await axiosInstance.post(`/api/community/posts/${postId}/like`);
+          return response.data;
+        };
         
       case 'analyzeImage':
-        return (file: File) => {
+        return async (file: File) => {
           const formData = new FormData();
           formData.append('image', file);
-          return axiosInstance.post('/api/analyze', formData, {
+          const response = await axiosInstance.post('/api/detection/analyze', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
+          return response.data;
         };
         
       default:
@@ -118,8 +144,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: any) => response,
   (error: any) => {
+    // Log error details for debugging
+    console.error('API Response Error:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+      url: error?.config?.url,
+      method: error?.config?.method
+    });
+    
     if (error.response?.status === 401) {
       // Handle unauthorized access
+      console.warn('Unauthorized access - clearing token and redirecting to login');
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -191,41 +227,6 @@ export const communityAPI = {
     
   deletePost: (postId: string) =>
     api.delete(`/api/community/posts/${postId}`),
-};
-
-// News API
-export const newsAPI = {
-  getNews: () => api.getNews(),
-  
-  getNewsItem: (newsId: string) =>
-    api.get(`/api/news/${newsId}`),
-    
-  createNews: (newsData: { title: string; content: string; image?: File }) => {
-    const formData = new FormData();
-    formData.append('title', newsData.title);
-    formData.append('content', newsData.content);
-    if (newsData.image) {
-      formData.append('image', newsData.image);
-    }
-    return api.post('/api/news', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  
-  updateNews: (newsId: string, newsData: { title: string; content: string; image?: File }) => {
-    const formData = new FormData();
-    formData.append('title', newsData.title);
-    formData.append('content', newsData.content);
-    if (newsData.image) {
-      formData.append('image', newsData.image);
-    }
-    return api.put(`/api/news/${newsId}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  
-  deleteNews: (newsId: string) =>
-    api.delete(`/api/news/${newsId}`),
 };
 
 // Admin API

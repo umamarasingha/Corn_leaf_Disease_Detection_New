@@ -1,41 +1,49 @@
-// Mock TensorFlow.js implementation for development
-// In production, this will be replaced with actual TensorFlow.js imports
+// NOTE: This is a placeholder implementation for development
+// In production, this should be replaced with actual TensorFlow.js imports:
+// import * as tf from '@tensorflow/tfjs';
 
-// Type definitions for mock TensorFlow.js
-interface MockTensor {
+// For now, this provides a fallback when the AI model is not available
+// The actual model will be loaded from the backend API
+
+// Type definitions for TensorFlow.js
+interface Tensor {
   shape: number[];
   data(): Promise<Float32Array>;
-  div(value: number): MockTensor;
-  expandDims(axis?: number): MockTensor;
+  div(value: number): Tensor;
+  expandDims(axis?: number): Tensor;
+  dispose(): void;
 }
 
-interface MockLayersModel {
+interface LayersModel {
   compile(config: any): void;
-  predict(input: MockTensor): MockTensor;
+  predict(input: Tensor): Tensor;
   save(path: string): Promise<void>;
   dispose(): void;
 }
 
-// Create complete mock tensor factory
-const createMockTensor = (shape: number[]): MockTensor => ({
-  shape,
-  data: async () => new Float32Array(shape.reduce((a, b) => a * b, 1)),
-  div: (value: number) => createMockTensor(shape),
-  expandDims: (axis?: number) => createMockTensor([1, ...shape])
-});
+// Helper function to create mock tensor
+function createMockTensor(shape: number[]): Tensor {
+  return {
+    shape,
+    data: async () => new Float32Array(shape.reduce((a, b) => a * b, 1)),
+    div: (value: number) => createMockTensor(shape),
+    expandDims: (axis?: number) => createMockTensor([1, ...shape]),
+    dispose: () => {}
+  };
+}
 
-// Mock TensorFlow.js namespace
+// Placeholder TensorFlow.js namespace - replace with actual import
 const tf = {
   tidy: <T>(fn: () => T): T => fn(),
   browser: {
-    fromPixels: (img: any): MockTensor => createMockTensor([224, 224, 3])
+    fromPixels: (img: any): Tensor => createMockTensor([224, 224, 3])
   },
   image: {
-    resizeBilinear: (tensor: MockTensor, size: number[]): MockTensor => createMockTensor(size)
+    resizeBilinear: (tensor: Tensor, size: number[]): Tensor => createMockTensor(size)
   },
-  sequential: (config: any): MockLayersModel => ({
+  sequential: (config: any): LayersModel => ({
     compile: () => {},
-    predict: () => createMockTensor([1, 6]),
+    predict: () => createMockTensor([1, 4]),
     save: async () => {},
     dispose: () => {}
   }),
@@ -50,22 +58,14 @@ const tf = {
   train: {
     adam: (rate: number) => ({})
   },
-  loadLayersModel: async (url: string): Promise<MockLayersModel> => ({
+  loadLayersModel: async (url: string): Promise<LayersModel> => ({
     compile: () => {},
-    predict: () => createMockTensor([1, 6]),
+    predict: () => createMockTensor([1, 4]),
     save: async () => {},
     dispose: () => {}
   }),
   dispose: (tensors: any[]) => {}
 };
-
-// Type declarations for TypeScript namespace recognition
-declare global {
-  namespace tf {
-    interface LayersModel extends MockLayersModel {}
-    interface Tensor extends MockTensor {}
-  }
-}
 
 // Disease classes for classification
 export const DISEASE_CLASSES = [
@@ -133,7 +133,7 @@ const DISEASE_INFO = {
 };
 
 export class CornDiseaseModel {
-  private model: tf.LayersModel | null = null;
+  private model: LayersModel | null = null;
   private isModelLoaded = false;
   private readonly IMAGE_SIZE = 224;
   private readonly BATCH_SIZE = 32;
@@ -230,7 +230,7 @@ export class CornDiseaseModel {
   /**
    * Preprocess image for model input
    */
-  private async preprocessImage(imageElement: HTMLImageElement): Promise<tf.Tensor> {
+  private async preprocessImage(imageElement: HTMLImageElement): Promise<Tensor> {
     return tf.tidy(() => {
       // Convert image to tensor
       const tensor = tf.browser.fromPixels(imageElement);
@@ -285,7 +285,7 @@ export class CornDiseaseModel {
       const preprocessed = await this.preprocessImage(image);
       
       // Make prediction
-      const prediction = this.model.predict(preprocessed) as tf.Tensor;
+      const prediction = this.model.predict(preprocessed) as Tensor;
       
       // Get probabilities
       const probabilities = await prediction.data();

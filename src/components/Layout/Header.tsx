@@ -4,6 +4,7 @@ import { Bell, Search, Menu, User, LogOut, Settings, Leaf } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle';
 import Notifications from '../Notifications';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuClick, title }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-2 sm:px-4 py-2 sticky top-0 z-40 w-full">
@@ -38,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, title }) => {
           <div className="hidden md:flex relative">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t('Search...')}
               className="pl-9 pr-3 py-1.5 sm:pl-10 sm:pr-4 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-32 sm:w-48 lg:w-64 text-sm"
             />
             <Search className="absolute left-2.5 sm:left-3 top-1.5 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500" />
@@ -71,14 +73,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, title }) => {
                   className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 flex items-center space-x-2"
                 >
                   <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Settings</span>
+                  <span>{t('Settings')}</span>
                 </button>
                 <button
                   onClick={logout}
                   className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 flex items-center space-x-2 text-red-600"
                 >
                   <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Logout</span>
+                  <span>{t('Logout')}</span>
                 </button>
               </div>
             </div>

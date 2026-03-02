@@ -4,7 +4,6 @@ import {
   Home, 
   Camera, 
   Users, 
-  Newspaper, 
   MessageSquare, 
   Settings, 
   BarChart3,
@@ -14,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,22 +22,22 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/', icon: Home, label: user?.role === 'admin' ? 'Dashboard' : 'Home' },
-    { path: '/detect', icon: Camera, label: 'Detect Disease' },
-    { path: '/feed', icon: Users, label: 'Community Feed' },
-    { path: '/news', icon: Newspaper, label: 'News & Updates' },
-    { path: '/chatbot', icon: MessageSquare, label: 'AI Assistant' },
+    { path: '/', icon: Home, label: t('Dashboard') },
+    { path: '/detect', icon: Camera, label: t('Detect Disease') },
+    { path: '/feed', icon: Users, label: t('Community Feed') },
+    { path: '/chatbot', icon: MessageSquare, label: t('AI Assistant') },
   ];
 
   const adminMenuItems = [
-    { path: '/admin/dashboard', icon: BarChart3, label: 'Admin Dashboard' },
-    { path: '/admin/training', icon: Brain, label: 'Model Training' },
-    { path: '/admin/data', icon: Upload, label: 'Data Management' },
-    { path: '/admin/settings', icon: Settings, label: 'Settings' },
+    { path: '/admin/dashboard', icon: BarChart3, label: t('Admin Dashboard') },
+    { path: '/admin/training', icon: Brain, label: t('Model Training') },
+    { path: '/admin/data', icon: Upload, label: t('Data Management') },
+    { path: '/admin/settings', icon: Settings, label: t('Settings') },
   ];
 
   const isActivePath = (path: string) => location.pathname === path;
@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">CornLeaf AI</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Disease Detection</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">{t('Disease Detection')}</p>
                 </div>
               </div>
               <button
@@ -103,11 +103,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               })}
             </div>
 
-            {user?.role === 'admin' && (
+            {user?.role?.toUpperCase() === 'ADMIN' && (
               <>
                 <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
                   <h3 className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Admin Panel
+                    {t('Admin Panel')}
                   </h3>
                 </div>
                 <div className="space-y-1">
@@ -139,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-3 text-white">
               <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
               <p className="text-xs opacity-90">
-                Upload clear images of corn leaves for better disease detection accuracy.
+                {t('Upload clear images of corn leaves for better disease detection accuracy.')}
               </p>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Camera, 
   Users, 
@@ -15,6 +16,7 @@ import {
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const isAdmin = user?.role === 'admin';
@@ -22,21 +24,21 @@ const HomePage: React.FC = () => {
   const features = [
     {
       icon: Camera,
-      title: 'Disease Detection',
+      title: t('Disease Detection'),
       description: 'AI-powered corn leaf disease detection with real-time analysis',
       path: '/detect',
       color: 'bg-green-500'
     },
     {
       icon: Users,
-      title: 'Community Feed',
+      title: t('Community Feed'),
       description: 'Connect with farmers and share disease detection experiences',
       path: '/feed',
       color: 'bg-blue-500'
     },
     {
       icon: MessageSquare,
-      title: 'AI Assistant',
+      title: t('AI Assistant'),
       description: 'Get expert advice and treatment recommendations from our AI chatbot',
       path: '/chatbot',
       color: 'bg-purple-500'
@@ -46,21 +48,21 @@ const HomePage: React.FC = () => {
   const adminFeatures = [
     {
       icon: BarChart3,
-      title: 'Dashboard',
+      title: t('Dashboard'),
       description: 'View system analytics and user statistics',
       path: '/admin/dashboard',
       color: 'bg-indigo-500'
     },
     {
       icon: Shield,
-      title: 'Model Training',
+      title: t('Model Training'),
       description: 'Train and manage AI disease detection models',
       path: '/admin/training',
       color: 'bg-orange-500'
     },
     {
       icon: Settings,
-      title: 'Settings',
+      title: t('Settings'),
       description: 'Configure system settings and preferences',
       path: '/admin/settings',
       color: 'bg-gray-500'
@@ -86,7 +88,7 @@ const HomePage: React.FC = () => {
               </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Welcome to CornLeaf AI
+              {t('Welcome to CornLeaf AI')}
             </h1>
             <p className="text-xl text-green-100 max-w-2xl mx-auto">
               Advanced corn leaf disease detection powered by artificial intelligence
@@ -96,7 +98,7 @@ const HomePage: React.FC = () => {
                 onClick={() => navigate('/detect')}
                 className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition-colors inline-flex items-center"
               >
-                Start Detection
+                {t('Start Detection')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             </div>
@@ -128,7 +130,7 @@ const HomePage: React.FC = () => {
       <div className="w-full">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Core Features
+            {t('Core Features')}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Everything you need for effective corn disease detection and management
@@ -154,7 +156,7 @@ const HomePage: React.FC = () => {
                   {feature.description}
                 </p>
                 <div className="flex items-center text-primary-600 font-medium">
-                  Get Started
+                  {t('Get Started')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </div>
               </div>
@@ -168,7 +170,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Admin Dashboard
+              {t('Admin Dashboard')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Manage system settings and monitor performance
@@ -194,7 +196,7 @@ const HomePage: React.FC = () => {
                     {feature.description}
                   </p>
                   <div className="flex items-center text-primary-600 font-medium">
-                    Access Panel
+                    {t('Access Panel')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </div>
                 </div>
@@ -209,7 +211,7 @@ const HomePage: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4">
-              Ready to Detect Diseases?
+              {t('Ready to Detect Diseases?')}
             </h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               Upload an image of your corn leaves and get instant AI-powered disease detection
@@ -220,14 +222,14 @@ const HomePage: React.FC = () => {
                 className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
               >
                 <Camera className="h-5 w-5 mr-2" />
-                Start Detection
+                {t('Start Detection')}
               </button>
               <button
                 onClick={() => navigate('/feed')}
                 className="bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-colors inline-flex items-center justify-center"
               >
                 <Users className="h-5 w-5 mr-2" />
-                View Community
+                {t('View Community')}
               </button>
             </div>
           </div>

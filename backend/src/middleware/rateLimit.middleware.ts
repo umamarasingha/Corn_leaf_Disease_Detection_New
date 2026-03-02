@@ -1,0 +1,15 @@
+import rateLimit from 'express-rate-limit';
+
+export const createRateLimiter = (windowMs: number = 15 * 60 * 1000, max: number = 100) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+};
+
+export const authRateLimiter = createRateLimiter(15 * 60 * 1000, 5);
+export const apiRateLimiter = createRateLimiter(15 * 60 * 1000, 100);
+export const uploadRateLimiter = createRateLimiter(60 * 60 * 1000, 10);

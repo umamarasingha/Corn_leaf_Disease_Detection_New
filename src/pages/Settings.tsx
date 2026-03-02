@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/api';
 import { 
   User, 
   Mail, 
@@ -16,7 +17,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Users,
-  Newspaper
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface UserSettings {
@@ -32,7 +34,6 @@ interface UserSettings {
     push: boolean;
     diseaseAlerts: boolean;
     communityUpdates: boolean;
-    newsUpdates: boolean;
   };
   privacy: {
     profileVisibility: 'public' | 'private';
@@ -49,12 +50,15 @@ interface UserSettings {
 }
 
 const Settings: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'privacy' | 'preferences'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const [settings, setSettings] = useState<UserSettings>({
     profile: {
@@ -69,7 +73,6 @@ const Settings: React.FC = () => {
       push: true,
       diseaseAlerts: true,
       communityUpdates: false,
-      newsUpdates: true,
     },
     privacy: {
       profileVisibility: 'public',
@@ -94,11 +97,17 @@ const Settings: React.FC = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update user profile
+      // Update user profile via API
       if (user) {
+        const formData = new FormData();
+        formData.append('name', settings.profile.name);
+        if (avatarPreview) {
+          const response = await fetch(avatarPreview);
+          const blob = await response.blob();
+          formData.append('avatar', blob as File);
+        }
+        
+        await apiService.updateProfile(formData);
         updateUser({ name: settings.profile.name });
       }
       
@@ -121,8 +130,8 @@ const Settings: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call real API for password change
+      await apiService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       
       setPasswordForm({
         currentPassword: '',
@@ -140,9 +149,48 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type DELETE to confirm');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiService.deleteAccount();
+      // Logout and redirect after successful deletion
+      logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      alert('Failed to delete account. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    setAvatarError(null);
+    
     if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      const fileType = file.type.toLowerCase();
+      
+      if (!validTypes.includes(fileType)) {
+        setAvatarError('Invalid file type. Please upload only JPG or PNG images.');
+        event.target.value = ''; // Reset the input
+        return;
+      }
+      
+      // Validate file size (max 5MB for avatar)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setAvatarError('File size too large. Please upload an image smaller than 5MB.');
+        event.target.value = '';
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -176,7 +224,7 @@ const Settings: React.FC = () => {
               <Upload className="h-4 w-4" />
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleAvatarUpload}
                 className="hidden"
               />
@@ -186,8 +234,18 @@ const Settings: React.FC = () => {
             <h4 className="text-lg font-medium text-gray-800">{settings.profile.name}</h4>
             <p className="text-sm text-gray-600">{settings.profile.email}</p>
             <p className="text-xs text-gray-500 mt-1">Member since {new Date(user?.createdAt || '').toLocaleDateString()}</p>
+            <p className="text-xs text-gray-500 mt-1">Avatar: JPG or PNG (Max 5MB)</p>
           </div>
         </div>
+        
+        {avatarError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600 flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {avatarError}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -313,6 +371,21 @@ const Settings: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Danger Zone */}
+      <div className="bg-white rounded-lg border-2 border-red-200 p-6">
+        <h3 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Once you delete your account, there is no going back. Please be certain.
+        </p>
+        <button
+          onClick={() => setShowDeleteConfirmation(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span>Delete Account</span>
+        </button>
+      </div>
     </div>
   );
 
@@ -392,25 +465,6 @@ const Settings: React.FC = () => {
                 type="checkbox"
                 checked={settings.notifications.communityUpdates}
                 onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, communityUpdates: e.target.checked } })}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Newspaper className="h-5 w-5 text-gray-400" />
-              <div>
-                <h4 className="text-sm font-medium text-gray-800">News Updates</h4>
-                <p className="text-xs text-gray-500">Latest news and research</p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.notifications.newsUpdates}
-                onChange={(e) => setSettings({ ...settings, notifications: { ...settings.notifications, newsUpdates: e.target.checked } })}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
@@ -507,8 +561,12 @@ const Settings: React.FC = () => {
             <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
               Download My Data
             </button>
-            <button className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-              Delete Account
+            <button 
+              onClick={() => setShowDeleteConfirmation(true)}
+              className="flex items-center space-x-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete Account</span>
             </button>
           </div>
         </div>
@@ -655,6 +713,75 @@ const Settings: React.FC = () => {
           <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
         </button>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">Delete Account</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeleteConfirmText('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+              </p>
+              <p className="text-gray-700 mb-4">
+                Your data that will be deleted:
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1 mb-4 ml-4">
+                <li>• Profile information</li>
+                <li>• Detection history</li>
+                <li>• Community posts and comments</li>
+                <li>• All settings and preferences</li>
+              </ul>
+              <p className="text-gray-700 font-medium mb-2">
+                Please type <span className="font-bold text-red-600">DELETE</span> to confirm:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Type DELETE to confirm"
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeleteConfirmText('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETE' || isLoading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Deleting...' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

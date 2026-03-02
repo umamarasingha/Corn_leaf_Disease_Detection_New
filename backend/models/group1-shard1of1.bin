@@ -1,0 +1,4 @@
+// Placeholder weights file for TensorFlow.js model
+// This file should be replaced with actual trained model weights
+// when a real model is trained and deployed.
+// For now, this allows the application to load without errors.

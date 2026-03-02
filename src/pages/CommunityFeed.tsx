@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Heart, 
@@ -12,7 +12,10 @@ import {
   Calendar,
   Leaf,
   Search,
-  Filter
+  Filter,
+  Bold,
+  Italic,
+  Type
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -45,6 +48,10 @@ const CommunityFeed: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isPostInputActive, setIsPostInputActive] = useState(false);
+  const [fontSize, setFontSize] = useState<'small' | 'normal' | 'large'>('normal');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'disease' | 'treatment' | 'general'>('all');
   const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'mostComments'>('latest');
@@ -176,6 +183,85 @@ const CommunityFeed: React.FC = () => {
     setFilteredPosts(filtered);
   }, [posts, searchTerm, filterType, sortBy]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Validate file types and size
+    const validFiles = files.filter(file => {
+      const isValidType = ['image/jpeg', 'image/jpg', 'image/png'].includes(file.type);
+      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
+      
+      if (!isValidType) {
+        alert(`${file.name} is not a valid image type. Please upload JPG or PNG files.`);
+        return false;
+      }
+      if (!isValidSize) {
+        alert(`${file.name} is too large. Maximum file size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    setSelectedImages(prev => [...prev, ...validFiles]);
+    
+    // Create preview URLs
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const applyFormatting = (formatType: 'bold' | 'italic') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = newPostContent.substring(start, end);
+    
+    if (selectedText) {
+      let formattedText = '';
+      if (formatType === 'bold') {
+        formattedText = `**${selectedText}**`;
+      } else if (formatType === 'italic') {
+        formattedText = `*${selectedText}*`;
+      }
+      
+      const newText = newPostContent.substring(0, start) + formattedText + newPostContent.substring(end);
+      setNewPostContent(newText);
+      
+      // Reset cursor position
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+      }, 0);
+    }
+  };
+
+  const getFontSizeClass = () => {
+    switch (fontSize) {
+      case 'small': return 'text-sm';
+      case 'large': return 'text-lg';
+      default: return 'text-base';
+    }
+  };
+
+  const renderFormattedText = (text: string) => {
+    // Replace **text** with <strong>text</strong> for bold
+    let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Replace *text* with <em>text</em> for italic
+    formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    return formatted;
+  };
+
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
 
@@ -201,6 +287,8 @@ const CommunityFeed: React.FC = () => {
       setPosts([newPost, ...posts]);
       setNewPostContent('');
       setSelectedImages([]);
+      setImagePreviews([]);
+      setIsPostInputActive(false);
     } catch (error) {
       console.error('Failed to create post:', error);
     }
@@ -319,39 +407,121 @@ const CommunityFeed: React.FC = () => {
             </div>
           </div>
           <div className="flex-1">
-            <div className="bg-gray-100 rounded-full px-4 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
-                 onClick={() => document.getElementById('post-input')?.focus()}>
-              <span className="text-gray-600 text-sm">What's on your mind about your crops?</span>
-            </div>
-            <textarea
-              id="post-input"
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder=""
-              className="hidden w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              rows={3}
-            />
-            
-            {/* Post Options - Hidden by default */}
-            <div className={`${newPostContent ? 'flex' : 'hidden'} items-center justify-between mt-3 pt-3 border-t border-gray-200`}>
-              <div className="flex space-x-4">
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors">
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="text-sm">Photo</span>
-                </button>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors">
-                  <Leaf className="h-5 w-5" />
-                  <span className="text-sm">Disease</span>
-                </button>
-              </div>
-              <button
-                onClick={handleCreatePost}
-                disabled={!newPostContent.trim()}
-                className="bg-primary-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            {!isPostInputActive ? (
+              <div 
+                className="bg-gray-100 rounded-full px-4 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
+                onClick={() => setIsPostInputActive(true)}
               >
-                Post
-              </button>
-            </div>
+                <span className="text-gray-600 text-sm">What's on your mind about your crops?</span>
+              </div>
+            ) : (
+              <div>
+                {/* Formatting Toolbar */}
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('bold')}
+                    className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600 hover:text-green-600"
+                    title="Bold (select text first)"
+                  >
+                    <Bold className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('italic')}
+                    className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600 hover:text-green-600"
+                    title="Italic (select text first)"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </button>
+                  <div className="h-6 w-px bg-gray-300 mx-1"></div>
+                  <div className="flex items-center gap-1">
+                    <Type className="h-4 w-4 text-gray-600" />
+                    <select
+                      value={fontSize}
+                      onChange={(e) => setFontSize(e.target.value as any)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="small">Small</option>
+                      <option value="normal">Normal</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <textarea
+                  id="post-input"
+                  ref={textareaRef}
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  placeholder="What's on your mind about your crops?"
+                  className={`w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${getFontSizeClass()}`}
+                  rows={3}
+                  autoFocus
+                />
+                
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img 
+                          src={preview} 
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Post Options */}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex space-x-4">
+                    <label className="flex items-center space-x-2 text-gray-600 hover:text-green-600 transition-colors cursor-pointer">
+                      <ImageIcon className="h-5 w-5" />
+                      <span className="text-sm">Photo</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        multiple
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setIsPostInputActive(false);
+                        setNewPostContent('');
+                        setSelectedImages([]);
+                        setImagePreviews([]);
+                        setFontSize('normal');
+                      }}
+                      className="bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCreatePost}
+                      disabled={!newPostContent.trim()}
+                      className="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Post
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -388,7 +558,10 @@ const CommunityFeed: React.FC = () => {
 
               {/* Post Content */}
               <div className="px-4 pb-3">
-                <p className="text-gray-800 text-sm leading-relaxed">{post.content}</p>
+                <p 
+                  className="text-gray-800 text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: renderFormattedText(post.content) }}
+                />
               </div>
 
               {/* Post Images */}

@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  avatar        String?
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  posts         Post[]
+  comments      Comment[]
+  detections    Detection[]
+  likes         Like[]
+  roleHistory   RoleHistory[]
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  title       String
+  content     String
+  images      String
+  likesCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id])
+  content   String
+  createdAt DateTime  @default(now())
+}
+
+model Like {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id])
+  createdAt DateTime  @default(now())
+  
+  @@unique([postId, userId])
+}
+
+model Detection {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  imageUrl    String
+  disease     String
+  confidence  Float
+  severity    String
+  description String
+  treatment   String
+  prevention  String
+  createdAt   DateTime  @default(now())
+}
+
+model News {
+  id        String    @id @default(uuid())
+  title     String
+  content   String
+  image     String?
+  author    String?
+  category  String?
+  isPublished Boolean  @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model RoleHistory {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  oldRole   String
+  newRole   String
+  changedBy String
+  changedAt DateTime  @default(now())
+}
