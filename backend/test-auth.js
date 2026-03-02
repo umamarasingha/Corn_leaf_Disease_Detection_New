@@ -1,5 +1,4 @@
 const axios = require('axios');
-//Uma/
 
 const API_BASE_URL = 'http://localhost:8000';
 
