@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Heart, 
   MessageCircle, 
@@ -43,6 +44,7 @@ interface Comment {
 
 const CommunityFeed: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,7 +273,7 @@ const CommunityFeed: React.FC = () => {
       const response = await api.createPost(title, newPostContent, image);
       
       // Handle different response formats
-      const newPost = response?.data || response || {
+      /*const newPost = response?.data || response || {
         id: Date.now().toString(),
         userId: user?.id || '1',
         userName: user?.name || 'Current User',
@@ -282,7 +284,23 @@ const CommunityFeed: React.FC = () => {
         comments: [],
         createdAt: new Date().toISOString(),
         isLiked: false
-      };
+      };*/
+
+      const created = response?.data || response;
+
+// Always ensure arrays and fields exist
+const newPost = {
+  id: created?.id ?? Date.now().toString(),
+  userId: created?.userId ?? (user?.id || '1'),
+  userName: created?.userName ?? (user?.name || 'Current User'),
+  userAvatar: created?.userAvatar ?? (user?.avatar || ''),
+  content: created?.content ?? newPostContent,
+  images: created?.images ?? (selectedImages.length > 0 ? [URL.createObjectURL(selectedImages[0])] : []),
+  likes: created?.likes ?? 0,
+  comments: created?.comments ?? [],   // <- important: never undefined
+  createdAt: created?.createdAt ?? new Date().toISOString(),
+  isLiked: created?.isLiked ?? false,
+};
       
       setPosts([newPost, ...posts]);
       setNewPostContent('');
@@ -307,26 +325,38 @@ const CommunityFeed: React.FC = () => {
     }
   };
 
-  const handleComment = (postId: string) => {
+  const handleComment = async (postId: string) => {
     const commentText = commentInputs[postId];
     if (!commentText?.trim()) return;
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      userId: user?.id || 'current',
-      userName: user?.name || 'Current User',
-      userAvatar: '',
-      content: commentText,
-      createdAt: 'Just now',
-    };
+    try {
+      const response = await api.post(`/api/community/${postId}/comments`, {
+        content: commentText.trim(),
+      });
 
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, comments: [...post.comments, newComment] }
-        : post
-    ));
+      const createdComment = response?.data || response;
+      const savedComment: Comment = {
+        id: createdComment?.id ?? Date.now().toString(),
+        userId: createdComment?.userId ?? (user?.id || 'current'),
+        userName: createdComment?.userName ?? createdComment?.user?.name ?? (user?.name || t('Current User')),
+        userAvatar: createdComment?.userAvatar ?? createdComment?.user?.avatar ?? '',
+        content: createdComment?.content ?? commentText.trim(),
+        createdAt: createdComment?.createdAt ?? new Date().toISOString(),
+      };
 
-    setCommentInputs({ ...commentInputs, [postId]: '' });
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.id === postId
+            ? { ...post, comments: [...post.comments, savedComment] }
+            : post
+        )
+      );
+
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+      alert(t('Failed to save comment. Please try again.'));
+    }
   };
 
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
@@ -357,7 +387,7 @@ const CommunityFeed: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search posts or users..."
+              placeholder={t('Search posts or users...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
@@ -373,10 +403,10 @@ const CommunityFeed: React.FC = () => {
                 onChange={(e) => setFilterType(e.target.value as any)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               >
-                <option value="all">All Posts</option>
-                <option value="disease">Disease Related</option>
-                <option value="treatment">Treatment & Tips</option>
-                <option value="general">General Discussion</option>
+                <option value="all">{t('All Posts')}</option>
+                <option value="disease">{t('Disease Related')}</option>
+                <option value="treatment">{t('Treatment & Tips')}</option>
+                <option value="general">{t('General Discussion')}</option>
               </select>
             </div>
             
@@ -385,16 +415,16 @@ const CommunityFeed: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value as any)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             >
-              <option value="latest">Latest First</option>
-              <option value="popular">Most Popular</option>
-              <option value="mostComments">Most Discussed</option>
+              <option value="latest">{t('Latest First')}</option>
+              <option value="popular">{t('Most Popular')}</option>
+              <option value="mostComments">{t('Most Discussed')}</option>
             </select>
           </div>
         </div>
         
         {/* Results Count */}
         <div className="mt-2 text-sm text-gray-600">
-          Showing {filteredPosts.length} of {posts.length} posts
+          {t('Showing')} {filteredPosts.length} {t('of')} {posts.length} {t('posts')}
         </div>
       </div>
 
@@ -412,7 +442,7 @@ const CommunityFeed: React.FC = () => {
                 className="bg-gray-100 rounded-full px-4 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
                 onClick={() => setIsPostInputActive(true)}
               >
-                <span className="text-gray-600 text-sm">What's on your mind about your crops?</span>
+                <span className="text-gray-600 text-sm">{t("What's on your mind about your crops?")}</span>
               </div>
             ) : (
               <div>
@@ -422,7 +452,7 @@ const CommunityFeed: React.FC = () => {
                     type="button"
                     onClick={() => applyFormatting('bold')}
                     className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600 hover:text-green-600"
-                    title="Bold (select text first)"
+                    title={t('Bold (select text first)')}
                   >
                     <Bold className="h-4 w-4" />
                   </button>
@@ -430,7 +460,7 @@ const CommunityFeed: React.FC = () => {
                     type="button"
                     onClick={() => applyFormatting('italic')}
                     className="p-2 rounded hover:bg-gray-100 transition-colors text-gray-600 hover:text-green-600"
-                    title="Italic (select text first)"
+                    title={t('Italic (select text first)')}
                   >
                     <Italic className="h-4 w-4" />
                   </button>
@@ -442,9 +472,9 @@ const CommunityFeed: React.FC = () => {
                       onChange={(e) => setFontSize(e.target.value as any)}
                       className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                      <option value="small">Small</option>
-                      <option value="normal">Normal</option>
-                      <option value="large">Large</option>
+                      <option value="small">{t('Small')}</option>
+                      <option value="normal">{t('Normal')}</option>
+                      <option value="large">{t('Large')}</option>
                     </select>
                   </div>
                 </div>
@@ -454,7 +484,7 @@ const CommunityFeed: React.FC = () => {
                   ref={textareaRef}
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="What's on your mind about your crops?"
+                  placeholder={t("What's on your mind about your crops?")}
                   className={`w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${getFontSizeClass()}`}
                   rows={3}
                   autoFocus
@@ -488,7 +518,7 @@ const CommunityFeed: React.FC = () => {
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2 text-gray-600 hover:text-green-600 transition-colors cursor-pointer">
                       <ImageIcon className="h-5 w-5" />
-                      <span className="text-sm">Photo</span>
+                      <span className="text-sm">{t('Photo')}</span>
                       <input
                         type="file"
                         accept="image/jpeg,image/jpg,image/png"
@@ -509,14 +539,14 @@ const CommunityFeed: React.FC = () => {
                       }}
                       className="bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors"
                     >
-                      Cancel
+                      {t('Cancel')}
                     </button>
                     <button
                       onClick={handleCreatePost}
                       disabled={!newPostContent.trim()}
                       className="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Post
+                      {t('Post')}
                     </button>
                   </div>
                 </div>
@@ -577,7 +607,7 @@ const CommunityFeed: React.FC = () => {
                         />
                         {post.content.toLowerCase().includes('disease') && (
                           <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Disease Alert
+                            {t('Disease Alert')}
                           </div>
                         )}
                       </div>
@@ -610,7 +640,7 @@ const CommunityFeed: React.FC = () => {
                     </button>
                     <button className="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors">
                       <Share2 className="h-4 w-4" />
-                      <span className="text-sm font-medium">Share</span>
+                      <span className="text-sm font-medium">{t('Share')}</span>
                     </button>
                   </div>
                 </div>
@@ -634,7 +664,7 @@ const CommunityFeed: React.FC = () => {
                     ))}
                     {post.comments.length > 2 && (
                       <button className="text-primary-600 text-sm font-medium hover:text-primary-700">
-                        View all {post.comments.length} comments
+                        {t('View all')} {post.comments.length} {t('comments')}
                       </button>
                     )}
                   </div>
@@ -654,12 +684,11 @@ const CommunityFeed: React.FC = () => {
                       onChange={(e) =>
                         setCommentInputs({ ...commentInputs, [post.id]: e.target.value })
                       }
-                      placeholder="Write a comment..."
+                      placeholder={t('Write a comment...')}
                       className="flex-1 bg-transparent text-sm outline-none"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           handleComment(post.id);
-                          setCommentInputs({ ...commentInputs, [post.id]: '' });
                         }
                       }}
                     />
@@ -670,7 +699,7 @@ const CommunityFeed: React.FC = () => {
           ))
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-600">No posts found matching your criteria.</p>
+            <p className="text-gray-600">{t('No posts found matching your criteria.')}</p>
           </div>
         )}
       </div>

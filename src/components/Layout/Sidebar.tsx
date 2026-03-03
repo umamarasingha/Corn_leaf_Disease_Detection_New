@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           <div className="p-3 border-t border-gray-200 dark:border-gray-700 hidden lg:block">
             <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-3 text-white">
-              <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
+              <h4 className="font-semibold text-sm mb-1">{t('Pro Tip')}</h4>
               <p className="text-xs opacity-90">
                 {t('Upload clear images of corn leaves for better disease detection accuracy.')}
               </p>

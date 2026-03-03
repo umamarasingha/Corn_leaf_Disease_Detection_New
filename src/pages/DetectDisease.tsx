@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import Webcam from 'react-webcam';
 import apiService from '../services/api';
 import { 
@@ -16,10 +17,11 @@ import {
   Cpu
 } from 'lucide-react';
 import { DetectionResult } from '../types';
-import { diseaseModel, DiseasePrediction } from '../utils/aiModel';
+import { diseaseModel } from '../utils/aiModel';
 
 const DetectDisease: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isUsingCamera, setIsUsingCamera] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -101,7 +103,7 @@ const DetectDisease: React.FC = () => {
       const fileType = file.type.toLowerCase();
       
       if (!validTypes.includes(fileType)) {
-        setUploadError('Invalid file type. Please upload only JPG or PNG images.');
+        setUploadError(t('Invalid file type. Please upload only JPG or PNG images.'));
         event.target.value = ''; // Reset the input
         return;
       }
@@ -109,7 +111,7 @@ const DetectDisease: React.FC = () => {
       // Validate file size (optional: max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
-        setUploadError('File size too large. Please upload an image smaller than 10MB.');
+        setUploadError(t('File size too large. Please upload an image smaller than 10MB.'));
         event.target.value = '';
         return;
       }
@@ -128,55 +130,27 @@ const DetectDisease: React.FC = () => {
     setIsAnalyzing(true);
     
     try {
-      let result: DiseasePrediction;
-      
-      // Use AI model if loaded, otherwise fallback to API
-      if (modelStatus.loaded) {
-        console.log('Using AI model for analysis...');
-        result = await diseaseModel.predictDisease(selectedImage);
-      } else {
-        console.log('AI model not loaded, using API fallback...');
-        // Convert base64 to blob for API call
-        const response = await fetch(selectedImage);
-        const blob = await response.blob();
-        const file = new File([blob], 'detection-image.jpg', { type: 'image/jpeg' });
-        
-        // Use the enhanced API service
-        const apiResult = await apiService.analyzeImage(file);
-        result = {
-          disease: apiResult.disease,
-          confidence: apiResult.confidence,
-          severity: apiResult.severity,
-          description: apiResult.description,
-          treatment: apiResult.treatment,
-          prevention: apiResult.prevention
-        };
-      }
+      // Always analyze through backend API so detection is persisted in DB
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'detection-image.jpg', { type: 'image/jpeg' });
+
+      const apiResult = await apiService.analyzeImage(file);
       
       setDetectionResult({
-        disease: result.disease,
-        confidence: result.confidence,
-        severity: result.severity,
-        description: result.description,
-        treatment: result.treatment,
-        prevention: result.prevention,
+        disease: apiResult.disease,
+        confidence: apiResult.confidence,
+        severity: apiResult.severity,
+        description: apiResult.description,
+        treatment: apiResult.treatment,
+        prevention: apiResult.prevention,
         timestamp: new Date().toISOString()
       });
       
     } catch (error) {
       console.error('Analysis failed:', error);
-      // Fallback to mock data if both AI model and API fail
-      const randomDisease = diseases[Math.floor(Math.random() * diseases.length)];
-      const result: DetectionResult = {
-        disease: randomDisease.name,
-        confidence: Math.floor(Math.random() * 20) + 80,
-        severity: randomDisease.severity,
-        description: randomDisease.description,
-        treatment: randomDisease.treatment,
-        prevention: randomDisease.prevention,
-        timestamp: new Date().toISOString()
-      };
-      setDetectionResult(result);
+      setDetectionResult(null);
+      alert(t('Failed to analyze image. Please try again.'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -202,9 +176,9 @@ const DetectDisease: React.FC = () => {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Disease Detection</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">{t('Disease Detection')}</h1>
         <p className="text-gray-600 mt-1 text-sm sm:text-base">
-          Upload or capture an image of corn leaf for AI-powered disease detection
+          {t('Upload or capture an image of corn leaf for AI-powered disease detection')}
         </p>
         
         {/* AI Model Status */}
@@ -212,17 +186,17 @@ const DetectDisease: React.FC = () => {
           {modelStatus.loading ? (
             <div className="flex items-center space-x-2 text-yellow-600">
               <Brain className="h-4 w-4 animate-pulse" />
-              <span className="text-xs sm:text-sm">Loading AI model...</span>
+              <span className="text-xs sm:text-sm">{t('Loading AI model...')}</span>
             </div>
           ) : modelStatus.loaded ? (
             <div className="flex items-center space-x-2 text-green-600">
               <Cpu className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">AI Ready</span>
+              <span className="text-xs sm:text-sm">{t('AI Ready')}</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-gray-500">
               <AlertTriangle className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">Using API fallback</span>
+              <span className="text-xs sm:text-sm">{t('Using API fallback')}</span>
             </div>
           )}
         </div>
@@ -236,12 +210,12 @@ const DetectDisease: React.FC = () => {
               <div className="h-16 w-16 sm:h-20 sm:w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Upload className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Upload Image</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{t('Upload Image')}</h3>
               <p className="text-gray-600 text-sm sm:text-base mb-2">
-                Choose an image from your device
+                {t('Choose an image from your device')}
               </p>
               <p className="text-xs text-gray-500 mb-4 sm:mb-6">
-                Accepted formats: JPG, PNG (Max 10MB)
+                {t('Accepted formats: JPG, PNG (Max 10MB)')}
               </p>
               {uploadError && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -254,7 +228,7 @@ const DetectDisease: React.FC = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/jpg,image/png"
+                accept="image/*"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -262,7 +236,7 @@ const DetectDisease: React.FC = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="btn-primary text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >
-                Select Image
+                {t('Select Image')}
               </button>
             </div>
           </div>
@@ -273,9 +247,9 @@ const DetectDisease: React.FC = () => {
               <div className="h-16 w-16 sm:h-20 sm:w-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Camera className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Take Photo</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{t('Take Photo')}</h3>
               <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
-                Use your camera to capture a leaf image
+                {t('Use your camera to capture a leaf image')}
               </p>
               <button
                 onClick={() => {
@@ -284,7 +258,7 @@ const DetectDisease: React.FC = () => {
                 }}
                 className="btn-secondary text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >
-                Open Camera
+                {t('Open Camera')}
               </button>
             </div>
           </div>
@@ -294,7 +268,7 @@ const DetectDisease: React.FC = () => {
           {/* Image Preview */}
           <div className="card p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800">Selected Image</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800">{t('Selected Image')}</h3>
               <button
                 onClick={resetDetection}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -306,19 +280,19 @@ const DetectDisease: React.FC = () => {
               <div>
                 <img
                   src={selectedImage}
-                  alt="Selected corn leaf"
+                  alt={t('Selected corn leaf')}
                   className="w-full rounded-lg object-cover"
                 />
               </div>
               <div className="flex flex-col justify-center">
                 <div className="space-y-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">Tips for Best Results:</h4>
+                    <h4 className="font-semibold text-blue-800 mb-2">{t('Tips for Best Results:')}</h4>
                     <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Ensure good lighting</li>
-                      <li>• Capture the entire leaf</li>
-                      <li>• Focus on affected areas</li>
-                      <li>• Avoid blurry images</li>
+                      <li>{t('• Ensure good lighting')}</li>
+                      <li>{t('• Capture the entire leaf')}</li>
+                      <li>{t('• Focus on affected areas')}</li>
+                      <li>{t('• Avoid blurry images')}</li>
                     </ul>
                   </div>
                   <button
@@ -329,10 +303,10 @@ const DetectDisease: React.FC = () => {
                     {isAnalyzing ? (
                       <span className="flex items-center justify-center">
                         <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                        Analyzing...
+                        {t('Analyzing...')}
                       </span>
                     ) : (
-                      'Analyze Image'
+                      t('Analyze Image')
                     )}
                   </button>
                 </div>
@@ -344,13 +318,13 @@ const DetectDisease: React.FC = () => {
           {detectionResult && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800">Detection Results</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t('Detection Results')}</h3>
                 <div className="flex items-center space-x-2">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(detectionResult.severity)}`}>
-                    {detectionResult.severity.toUpperCase()} SEVERITY
+                    {t(detectionResult.severity).toUpperCase()} {t('Severity').toUpperCase()}
                   </span>
                   <span className="text-sm text-gray-500">
-                    {detectionResult.confidence}% confidence
+                    {detectionResult.confidence}% {t('confidence')}
                   </span>
                 </div>
               </div>
@@ -364,37 +338,37 @@ const DetectDisease: React.FC = () => {
                       ) : (
                         <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
                       )}
-                      {detectionResult.disease}
+                      {t(detectionResult.disease)}
                     </h4>
-                    <p className="text-gray-600 text-sm">{detectionResult.description}</p>
+                    <p className="text-gray-600 text-sm">{t(detectionResult.description)}</p>
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
                         <Info className="h-4 w-4 mr-2 text-blue-600" />
-                        Treatment
+                        {t('Treatment')}
                       </h5>
-                      <p className="text-gray-600 text-sm">{detectionResult.treatment}</p>
+                      <p className="text-gray-600 text-sm">{t(detectionResult.treatment)}</p>
                     </div>
 
                     <div>
                       <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
                         <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                        Prevention
+                        {t('Prevention')}
                       </h5>
-                      <p className="text-gray-600 text-sm">{detectionResult.prevention}</p>
+                      <p className="text-gray-600 text-sm">{t(detectionResult.prevention)}</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-800 mb-3">Confidence Breakdown</h5>
+                    <h5 className="font-semibold text-gray-800 mb-3">{t('Confidence Breakdown')}</h5>
                     <div className="space-y-3">
                       {diseases.map((disease) => (
                         <div key={disease.name} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">{disease.name}</span>
+                          <span className="text-sm text-gray-600">{t(disease.name)}</span>
                           <div className="flex items-center space-x-2">
                             <div className="w-24 bg-gray-200 rounded-full h-2">
                               <div
@@ -420,11 +394,11 @@ const DetectDisease: React.FC = () => {
                   <div className="flex space-x-3 mt-4">
                     <button className="btn-secondary flex items-center space-x-2">
                       <Download className="h-4 w-4" />
-                      <span>Download Report</span>
+                      <span>{t('Download Report')}</span>
                     </button>
                     <button className="btn-secondary flex items-center space-x-2">
                       <Share2 className="h-4 w-4" />
-                      <span>Share Results</span>
+                      <span>{t('Share Results')}</span>
                     </button>
                   </div>
                 </div>
@@ -440,7 +414,7 @@ const DetectDisease: React.FC = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Capture Photo</h3>
+                <h3 className="text-lg font-semibold">{t('Capture Photo')}</h3>
                 <button
                   onClick={() => setShowCamera(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
@@ -460,13 +434,13 @@ const DetectDisease: React.FC = () => {
                   onClick={capturePhoto}
                   className="btn-primary"
                 >
-                  Capture Photo
+                  {t('Capture Photo')}
                 </button>
                 <button
                   onClick={() => setShowCamera(false)}
                   className="btn-secondary"
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
               </div>
             </div>

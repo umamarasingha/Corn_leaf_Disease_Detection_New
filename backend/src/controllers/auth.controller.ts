@@ -37,6 +37,11 @@ export async function register(req: Request, res: Response) {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        bio: user.bio,
+        createdAt: user.createdAt,
       },
     });
   } catch (error: any) {
@@ -74,6 +79,10 @@ export async function login(req: Request, res: Response) {
         name: user.name,
         role: user.role,
         avatar: user.avatar,
+        phone: user.phone,
+        location: user.location,
+        bio: user.bio,
+        createdAt: user.createdAt,
       },
     });
   } catch (error: any) {
@@ -116,6 +125,9 @@ export async function validateToken(req: AuthRequest, res: Response) {
         name: true,
         role: true,
         avatar: true,
+        phone: true,
+        location: true,
+        bio: true,
         createdAt: true,
       },
     });
@@ -141,6 +153,9 @@ export async function getMe(req: AuthRequest, res: Response) {
         name: true,
         role: true,
         avatar: true,
+        phone: true,
+        location: true,
+        bio: true,
         createdAt: true,
       },
     });
@@ -187,7 +202,7 @@ export async function changePassword(req: AuthRequest, res: Response) {
 
 export async function updateProfile(req: AuthRequest, res: Response) {
   try {
-    const { name } = req.body;
+    const { name, phone, location, bio } = req.body;
     const avatar = req.file ? `/uploads/${req.file.filename}` : undefined;
     const userId = req.user!.userId;
 
@@ -195,6 +210,9 @@ export async function updateProfile(req: AuthRequest, res: Response) {
       where: { id: userId },
       data: {
         ...(name && { name }),
+        ...(phone !== undefined && { phone }),
+        ...(location !== undefined && { location }),
+        ...(bio !== undefined && { bio }),
         ...(avatar && { avatar }),
       },
       select: {
@@ -203,6 +221,10 @@ export async function updateProfile(req: AuthRequest, res: Response) {
         name: true,
         role: true,
         avatar: true,
+        phone: true,
+        location: true,
+        bio: true,
+        createdAt: true,
       },
     });
 

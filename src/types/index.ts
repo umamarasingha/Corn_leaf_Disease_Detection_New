@@ -4,6 +4,9 @@ export interface User {
   name: string;
   role: 'user' | 'admin';
   avatar?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
   createdAt: string;
   lastLogin?: string;
 }
