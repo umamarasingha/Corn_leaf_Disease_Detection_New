@@ -64,9 +64,9 @@ const Settings: React.FC = () => {
     profile: {
       name: user?.name || '',
       email: user?.email || '',
-      bio: '',
-      location: '',
-      phone: '',
+      bio: user?.bio || '',
+      location: user?.location || '',
+      phone: user?.phone || '',
     },
     notifications: {
       email: true,
@@ -101,14 +101,24 @@ const Settings: React.FC = () => {
       if (user) {
         const formData = new FormData();
         formData.append('name', settings.profile.name);
+        formData.append('phone', settings.profile.phone);
+        formData.append('location', settings.profile.location);
+        formData.append('bio', settings.profile.bio);
         if (avatarPreview) {
           const response = await fetch(avatarPreview);
           const blob = await response.blob();
-          formData.append('avatar', blob as File);
+          formData.append('image', blob as File);
         }
         
-        await apiService.updateProfile(formData);
-        updateUser({ name: settings.profile.name });
+        const response = await apiService.updateProfile(formData);
+        const updatedUser = response?.user || response;
+        updateUser({
+          name: updatedUser?.name ?? settings.profile.name,
+          avatar: updatedUser?.avatar,
+          phone: updatedUser?.phone ?? settings.profile.phone,
+          location: updatedUser?.location ?? settings.profile.location,
+          bio: updatedUser?.bio ?? settings.profile.bio,
+        });
       }
       
       setSaveStatus('success');

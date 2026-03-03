@@ -69,7 +69,7 @@ const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -79,7 +79,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const token = localStorage.getItem('token');
     if (token) {
       // Validate token and get user info
-      validateToken(token);
+      validateToken(token).catch(() => {
+        // Invalid/expired token state is already handled inside validateToken
+      });
+    } else {
+      dispatch({ type: 'LOGIN_FAILURE' });
     }
   }, []);
 

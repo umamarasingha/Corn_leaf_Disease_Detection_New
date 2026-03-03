@@ -85,7 +85,7 @@ const api = new Proxy(axiosInstance, {
           
       case 'getPosts':
         return async () => {
-          const response = await axiosInstance.get('/api/community/posts');
+          const response = await axiosInstance.get('/api/community');
           return response.data;
         };
         
@@ -97,7 +97,7 @@ const api = new Proxy(axiosInstance, {
           if (image) {
             formData.append('image', image);
           }
-          const response = await axiosInstance.post('/api/community/posts', formData, {
+          const response = await axiosInstance.post('/api/community', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
           return response.data;
@@ -105,7 +105,7 @@ const api = new Proxy(axiosInstance, {
         
       case 'likePost':
         return async (postId: string) => {
-          const response = await axiosInstance.post(`/api/community/posts/${postId}/like`);
+          const response = await axiosInstance.post(`/api/community/${postId}/like`);
           return response.data;
         };
         
@@ -217,16 +217,16 @@ export const communityAPI = {
     api.createPost(postData.title, postData.content, postData.image),
   
   getPost: (postId: string) => 
-    api.get(`/api/community/posts/${postId}`),
+    api.get(`/api/community/${postId}`),
     
   likePost: (postId: string) =>
     api.likePost(postId),
     
   addComment: (postId: string, content: string) =>
-    api.post(`/api/community/posts/${postId}/comments`, { content }),
+    api.post(`/api/community/${postId}/comments`, { content }),
     
   deletePost: (postId: string) =>
-    api.delete(`/api/community/posts/${postId}`),
+    api.delete(`/api/community/${postId}`),
 };
 
 // Admin API

@@ -26,8 +26,16 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 const AppContent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { t } = useLanguage();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-300">Loading...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

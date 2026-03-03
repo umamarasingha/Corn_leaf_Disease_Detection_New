@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
+import { detectionAPI } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -28,6 +29,14 @@ interface DiseaseItem {
   name: string;
   count: number;
   percentage: number;
+}
+
+interface DetectionRow {
+  id: string;
+  userId: string;
+  disease: string;
+  severity: 'low' | 'medium' | 'high';
+  createdAt: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -68,85 +77,138 @@ const Dashboard: React.FC = () => {
   const [diseaseDistribution, setDiseaseDistribution] = useState<DiseaseItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getRelativeTime = (dateString: string) => {
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    if (diffMinutes < 1) return t('Just now');
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Mock stats data (replace with real API call when available)
+        const [detectionResponse, postsResponse] = await Promise.all([
+          detectionAPI.getDetectionHistory(user?.id || ''),
+          apiService.getPosts(),
+        ]);
+
+        const detections: DetectionRow[] = Array.isArray(detectionResponse)
+          ? detectionResponse
+          : detectionResponse?.data || [];
+
+        const posts = Array.isArray(postsResponse)
+          ? postsResponse
+          : postsResponse?.data || postsResponse?.posts || [];
+
+        const myPostsCount = posts.filter((post: any) => post.userId === user?.id).length;
+        const diseaseCases = detections.filter((detection) => detection.disease !== 'Healthy').length;
+        const healthyScans = detections.filter((detection) => detection.disease === 'Healthy').length;
+
         setStats([
           {
             title: t('My Detections'),
-            value: '24',
-            change: '+12%',
+            value: String(detections.length),
+            change: '+0%',
             icon: Camera,
             color: 'bg-green-500',
           },
           {
             title: t('My Posts'),
-            value: '8',
-            change: '+5%',
+            value: String(myPostsCount),
+            change: '+0%',
             icon: Users,
             color: 'bg-emerald-500',
           },
           {
             title: t('Disease Cases'),
-            value: '5',
-            change: '-3%',
+            value: String(diseaseCases),
+            change: '+0%',
             icon: AlertTriangle,
             color: 'bg-orange-500',
           },
           {
             title: t('Healthy Scans'),
-            value: '19',
-            change: '+8%',
+            value: String(healthyScans),
+            change: '+0%',
             icon: Leaf,
             color: 'bg-teal-500',
           },
         ]);
 
-        // Mock recent activity - showing user's own activity
-        setRecentActivity([
-          {
-            id: 1,
+        const recentDetections = [...detections]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 3)
+          .map((detection, index) => ({
+            id: index + 1,
             type: 'detection',
-            user: 'You',
-            action: 'detected Northern Leaf Blight',
-            time: '2 hours ago',
-            severity: 'high',
-          },
-          {
-            id: 2,
-            type: 'post',
-            user: 'You',
-            action: 'posted about treatment success',
-            time: '1 day ago',
-            severity: 'low',
-          },
-          {
-            id: 3,
-            type: 'detection',
-            user: 'You',
-            action: 'detected Healthy Plant',
-            time: '2 days ago',
-            severity: 'low',
-          },
-        ]);
+            user: t('You'),
+            action: `${t('Detection')}: ${t(detection.disease)}`,
+            time: getRelativeTime(detection.createdAt),
+            severity: detection.severity,
+          }));
 
-        // Mock disease distribution
-        setDiseaseDistribution([
-          { name: 'Northern Leaf Blight', count: 34, percentage: 38 },
-          { name: 'Gray Leaf Spot', count: 28, percentage: 31 },
-          { name: 'Common Rust', count: 18, percentage: 20 },
-          { name: 'Healthy', count: 11, percentage: 11 },
-        ]);
+        setRecentActivity(recentDetections);
+
+        const diseaseMap = detections.reduce((acc, detection) => {
+          acc[detection.disease] = (acc[detection.disease] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const totalDetections = detections.length || 1;
+        const distribution = Object.entries(diseaseMap)
+          .map(([name, count]) => ({
+            name: t(name),
+            count,
+            percentage: Math.round((count / totalDetections) * 100),
+          }))
+          .sort((a, b) => b.count - a.count);
+
+        setDiseaseDistribution(distribution);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
+        setStats([
+          {
+            title: t('My Detections'),
+            value: '0',
+            change: '+0%',
+            icon: Camera,
+            color: 'bg-green-500',
+          },
+          {
+            title: t('My Posts'),
+            value: '0',
+            change: '+0%',
+            icon: Users,
+            color: 'bg-emerald-500',
+          },
+          {
+            title: t('Disease Cases'),
+            value: '0',
+            change: '+0%',
+            icon: AlertTriangle,
+            color: 'bg-orange-500',
+          },
+          {
+            title: t('Healthy Scans'),
+            value: '0',
+            change: '+0%',
+            icon: Leaf,
+            color: 'bg-teal-500',
+          },
+        ]);
+        setRecentActivity([]);
+        setDiseaseDistribution([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [t, user?.id]);
 
   return (
     <div className="w-full max-w-full space-y-3 sm:space-y-4">
@@ -252,7 +314,7 @@ const Dashboard: React.FC = () => {
           >
             <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
             <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('New Detection')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">Upload or capture an image</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('Upload or capture an image')}</p>
           </button>
           <button 
             onClick={() => navigate('/feed')}
@@ -260,7 +322,7 @@ const Dashboard: React.FC = () => {
           >
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
             <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('Community Feed')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">See what others are sharing</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('See what others are sharing')}</p>
           </button>
           <button 
             onClick={() => navigate('/chatbot')}
@@ -268,7 +330,7 @@ const Dashboard: React.FC = () => {
           >
             <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
             <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('AI Assistant')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">Get help from AI chatbot</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('Get help from AI chatbot')}</p>
           </button>
         </div>
       </div>
