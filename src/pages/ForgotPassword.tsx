@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const ForgotPassword: React.FC = () => {
   const { t } = useLanguage();
+  const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -29,17 +30,12 @@ const ForgotPassword: React.FC = () => {
       return;
     }
 
-    const token = new URLSearchParams(window.location.search).get('token');
-    if (!token) {
-      setError(t('Invalid or missing reset token. Please request a new password reset link.'));
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      await authAPI.resetPassword(token, newPassword);
+      await authAPI.resetPassword(email, newPassword);
       setSuccess(t('Password reset successful. You can now sign in with your new password.'));
+      setEmail('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
@@ -72,6 +68,22 @@ const ForgotPassword: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('Email Address')}
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="input-field"
+                placeholder={t('Enter your email')}
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('New Password')}

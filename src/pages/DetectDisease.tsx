@@ -10,8 +10,6 @@ import {
   CheckCircle, 
   AlertTriangle, 
   Info, 
-  Download,
-  Share2,
   RefreshCw,
   Brain,
   Cpu
@@ -391,16 +389,6 @@ const DetectDisease: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex space-x-3 mt-4">
-                    <button className="btn-secondary flex items-center space-x-2">
-                      <Download className="h-4 w-4" />
-                      <span>{t('Download Report')}</span>
-                    </button>
-                    <button className="btn-secondary flex items-center space-x-2">
-                      <Share2 className="h-4 w-4" />
-                      <span>{t('Share Results')}</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
