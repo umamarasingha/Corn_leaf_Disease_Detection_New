@@ -115,6 +115,29 @@ export async function forgotPassword(req: Request, res: Response) {
   }
 }
 
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    res.json({ message: 'Password reset successful' });
+  } catch (error: any) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+}
+
 export async function validateToken(req: AuthRequest, res: Response) {
   try {
     const user = await prisma.user.findUnique({

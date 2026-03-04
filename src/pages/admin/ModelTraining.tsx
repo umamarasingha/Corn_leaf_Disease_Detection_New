@@ -7,9 +7,7 @@ import {
   CheckCircle, 
   AlertTriangle, 
   BarChart3,
-  Download,
   RefreshCw,
-  Settings,
   FileText,
   Zap,
   Clock,
@@ -262,16 +260,6 @@ const ModelTraining: React.FC = () => {
           <p className="text-gray-600 mt-1">
             Train and improve AI models for disease detection
           </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button className="btn-secondary flex items-center space-x-2">
-            <Download className="h-4 w-4" />
-            <span>Export Model</span>
-          </button>
-          <button className="btn-secondary flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
-          </button>
         </div>
       </div>
 
