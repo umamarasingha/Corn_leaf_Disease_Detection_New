@@ -155,12 +155,19 @@ class Handler(BaseHTTPRequestHandler):
 # Entry-point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("ML_SERVICE_PORT", 5001))
-    load_model()
+    import threading
+    # Railway injects PORT; fall back to ML_SERVICE_PORT or 5001
+    port = int(os.environ.get("PORT", os.environ.get("ML_SERVICE_PORT", 5001)))
+
+    # Start HTTP server immediately so healthchecks pass right away
     server = HTTPServer(("0.0.0.0", port), Handler)
     log.info("ML inference service listening on http://0.0.0.0:%d", port)
     log.info("  POST /predict  { image: <base64> }")
     log.info("  GET  /health")
+
+    # Load model in a background thread so startup is not blocked
+    threading.Thread(target=load_model, daemon=True).start()
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
