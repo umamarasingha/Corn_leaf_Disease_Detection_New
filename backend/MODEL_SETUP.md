@@ -1,104 +1,121 @@
 # Model Setup Guide
 
-## Current Status
+## Overview
 
-Your trained model (`trained_model.h5`) has been copied to `backend/models/`. However, TensorFlow.js in Node.js cannot directly load `.h5` files - it needs TensorFlow.js format (model.json + weight files).
+The backend supports **three strategies** for running corn leaf disease predictions, tried in order:
 
-## What's Working
+| Priority | Strategy | Requirement |
+|----------|----------|-------------|
+| 1 | **Python ML service** (`ml_service.py`) | Python 3 + TensorFlow + Pillow |
+| 2 | **TF.js converted model** (`models/model.json`) | Run `convert_model.py` once |
+| 3 | **Mock prediction** (random, dev-only) | Nothing – always available |
 
-- Backend server is running on port 8000
-- AI service is initialized and ready
-- Mock predictions are working as fallback
-- Disease information for "maize fall armyworm" has been added
+---
 
-## What Needs to Be Done
+## Model Files
 
-### ⚡ FASTEST METHOD: Web Conversion Tool (Recommended)
+All model files live in `backend/models/`:
 
-This is the fastest method - no installation required, works instantly!
+| File | Purpose |
+|------|---------|
+| `corn_leaf_model.h5` | Original Keras model (MobileNetV2 backbone, 4 classes) |
+| `model.weights.h5` | Weights-only file |
+| `config.json` | Keras model configuration |
+| `model.json` | TF.js topology (placeholder – overwritten by `convert_model.py`) |
+| `group1-shard1of1.bin` | TF.js weight shard (placeholder – overwritten by `convert_model.py`) |
 
-1. **Go to the web converter:** https://www.tensorflow.org/js/tutorials/conversion
-2. **Click "Upload Model"** and select your `trained_model.h5` file
-3. **Click "Convert"** - this takes about 30 seconds
-4. **Download the converted files** - you'll get:
-   - `model.json`
-   - `group1-shard1of1.bin` (or similar weight files)
-5. **Place the files in `backend/models/`**:
-   - Replace the existing `model.json`
-   - Replace the existing `group1-shard1of1.bin`
+### Classes (4 output neurons, alphabetical)
+0. **Blight** (Northern Leaf Blight)
+1. **Common Rust**
+2. **Gray Leaf Spot**
+3. **Healthy**
 
-That's it! Your model is now ready to use.
+---
 
-### Alternative Methods (Only if web tool doesn't work)
+## Option A – Python ML Service (Recommended)
 
-#### Method 2: Python Command Line (Requires tensorflowjs - SLOW)
+### 1. Install Python dependencies
+
+```bash
+# Python 3.9–3.11 recommended
+pip install flask tensorflow pillow
+```
+
+### 2. Start the service
+
+```bash
+# From the project root
+python backend/ml_service.py
+```
+
+The service runs on **http://localhost:5001** by default.  
+Set `ML_SERVICE_PORT` env var to change the port.  
+Set `ML_SERVICE_URL` env var in the Node.js backend to point to a different host.
+
+### 3. Start the Node.js backend
 
 ```bash
 cd backend
-pip install tensorflowjs  # This takes ~1 hour to install
-python -c "import tensorflowjs as tfjs; tfjs.converters.save_keras_model('trained_model.h5', 'models/')"
+npm run dev
 ```
 
-#### Method 3: Command Line Tool (Requires Node.js)
+The Node.js backend auto-detects the Python service at startup and routes predictions through it.
+
+---
+
+## Option B – TF.js Converted Model
+
+If you want the Node.js backend to run inference without a separate Python process:
+
+### 1. Install conversion tools
+
+```bash
+pip install tensorflowjs tensorflow
+```
+
+### 2. Run the conversion script
+
+```bash
+python backend/convert_model.py
+```
+
+This overwrites `backend/models/model.json` and `group1-shard1of1.bin` with real weight data.
+
+### 3. Restart the Node.js backend
 
 ```bash
 cd backend
-npx @tensorflow/tfjs-converter --input_format keras trained_model.h5 models/
+npm run dev
 ```
 
-## After Conversion
+The backend will load `model.json` automatically using `@tensorflow/tfjs`.
 
-Once you have the converted model files:
+---
 
-1. Replace the placeholder files in `backend/models/`:
-   - Replace `model.json` with your converted model.json
-   - Replace `group1-shard1of1.bin` with your weight files
+## Environment Variables
 
-2. Restart the backend server
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ML_SERVICE_URL` | `http://localhost:5001` | URL of the Python inference service |
+| `PORT` | `8000` | Node.js backend port |
 
-3. The AI service will automatically load your model
+Add these to `backend/.env` as needed.
 
-## Testing
+---
 
-After conversion, test the model integration:
+## Verifying the Setup
 
-1. Start the backend: `npm run dev` (in backend directory)
-2. Upload an image via the frontend
-3. Check the backend console for: "AI model loaded successfully"
-4. Verify predictions are using your trained model
+```bash
+# Check the Python service health
+curl http://localhost:5001/health
 
-## Troubleshooting
+# Expected response
+{"status": "ok", "model_loaded": true}
+```
 
-### Model Not Loading
-
-If you see "Failed to load AI model, using fallback":
-
-1. Check that `backend/models/model.json` exists
-2. Check that weight files are present
-3. Check backend console for specific error messages
-
-### Conversion Errors
-
-If conversion fails:
-
-1. Make sure you have Python 3.8+
-2. Install tensorflowjs: `pip install tensorflowjs`
-3. Verify your .h5 file is not corrupted
-
-## Current Fallback Behavior
-
-Until the model is converted:
-- The AI service will use mock predictions
-- Disease detection will still work but with random results
-- All other features (community, chatbot, etc.) work normally
-
-## Disease Classes
-
-Your trained model should predict these classes:
-- maize fall armyworm
-- Northern Leaf Blight
-- Gray Leaf Spot
-- Common Rust
-- Healthy
-
-Ensure your model outputs match these classes for proper integration.
+Or make a detection request through the Node.js API:
+```bash
+curl -X POST http://localhost:8000/api/detection/analyze \
+  -H "Authorization: Bearer <token>" \
+  -F "image=@path/to/corn_leaf.jpg"
+```

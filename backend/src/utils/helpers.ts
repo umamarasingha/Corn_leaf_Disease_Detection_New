@@ -16,6 +16,13 @@ export function getDiseaseInfo(diseaseName: string) {
       prevention: 'Plant early-maturing varieties, use biological control agents, practice crop rotation, maintain field sanitation.',
       severity: 'high',
     },
+    // Alias used by the 4-class model output
+    'Blight': {
+      description: 'A fungal disease (Northern Leaf Blight) that causes long, elliptical lesions on corn leaves, leading to significant yield loss.',
+      treatment: 'Apply fungicides containing strobilurin or triazole active ingredients. Remove infected plant debris promptly.',
+      prevention: 'Use resistant corn varieties, practice crop rotation, ensure proper plant spacing for air circulation.',
+      severity: 'high',
+    },
     'Northern Leaf Blight': {
       description: 'A fungal disease that causes long, elliptical lesions on corn leaves.',
       treatment: 'Apply fungicides containing strobilurin or triazole active ingredients. Remove infected plant debris.',
