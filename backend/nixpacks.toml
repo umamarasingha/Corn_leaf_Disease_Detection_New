@@ -1,23 +1,17 @@
 # Nixpacks configuration for Railway – backend deployment
-# This tells Railway exactly how to build and run the backend.
+# Force Node.js as the primary language, ignore Python files
 
 [start]
-# What command to run to start the app
-run = "npx prisma migrate deploy && node dist/app.js"
+# Override the detected Python deploy command
+run = "node dist/app.js"
 
 [build]
-# What command to run to build the app
-# First install Node dependencies, then install Python deps for tfjs-node, then build
-build = "npm install && pip install --no-cache-dir tensorflow-cpu pillow && npx prisma generate && npm run build"
+# Override build to use npm
+build = "npm install && npx prisma generate && npm run build"
 
-# Use Node 18 LTS (tfjs-node has prebuilt binaries for Node 18)
 [nodejs]
 version = "18"
 
-# Install Python 3.11 (for TensorFlow if you want to run ml_service.py locally)
 [python]
-version = "3.11"
-
-# Apt packages needed for sharp and tfjs-node
-[apt]
-packages = ["libvips-dev", "build-essential"]
+# Disable Python detection - we don't want it as the deploy command
+detect = false

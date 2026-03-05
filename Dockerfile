@@ -46,4 +46,4 @@ RUN mkdir -p ./uploads
 EXPOSE 8000
 
 # Run migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/app.js"]
+CMD ["node", "dist/app.js"]
