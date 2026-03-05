@@ -8,7 +8,7 @@ FROM node:18-slim
 
 # Install system deps needed by tfjs-node and sharp
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip \
+        python3 python3-pip python-is-python3 \
         build-essential \
         libvips-dev \
         ca-certificates \
