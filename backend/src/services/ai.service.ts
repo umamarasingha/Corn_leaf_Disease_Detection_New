@@ -2,16 +2,16 @@
  * AI Service – corn leaf disease prediction
  *
  * Strategy (in order of priority):
- * 1. Call the local Python ML inference service (http://localhost:5001/predict)
- *    which loads corn_leaf_model.h5 via Keras.  Start it with:
- *       python backend/ml_service.py
- * 2. Load TF.js format model (backend/models/model.json) with @tensorflow/tfjs
- *    when the model has been converted with the convert script.
- * 3. Mock prediction (random, for development without any ML backend).
+ * 1. @tensorflow/tfjs-node  →  loads corn_leaf_model.h5 directly.
+ *    Works on Linux (Railway/Docker).  On Windows the native binding may need
+ *    building from source; if it fails we fall through to the next options.
+ * 2. HTTP → Python ML service  (python backend/ml_service.py, port 5001)
+ *    Works everywhere if the Python service is running.
+ * 3. @tensorflow/tfjs  →  loads models/model.json (TF.js converted format).
+ *    Run `python backend/convert_model.py` once to produce a real model.json.
+ * 4. Mock prediction  (always available, for CI / dev without any ML setup).
  */
 
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-cpu'; // Register CPU backend for Node.js
 import { getDiseaseInfo } from '../utils/helpers';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -26,139 +26,204 @@ export interface DiseasePrediction {
   prevention: string;
 }
 
-// Disease classes – must match the alphabetical label order used during training
+// Disease classes – alphabetical order = training label encoding
 const DISEASE_CLASSES = ['Blight', 'Common Rust', 'Gray Leaf Spot', 'Healthy'];
 
+const MODEL_DIR = path.join(__dirname, '../../models');
+const H5_MODEL_PATH = path.join(MODEL_DIR, 'corn_leaf_model.h5');
+const TFJS_MODEL_PATH = path.join(MODEL_DIR, 'model.json');
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+const SCRIPTS_DIR = path.join(__dirname, '../scripts');
+const PYTHON_SERVICE_PATH = path.join(SCRIPTS_DIR, 'ml_service.py');
+const CONVERT_SCRIPT_PATH = path.join(SCRIPTS_DIR, 'convert_model.py');
 
 class AIService {
-  private model: tf.LayersModel | null = null;
-  private isModelLoaded = false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private tfjsNodeModel: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private tfjsModel: any = null;
   private isPythonServiceAvailable = false;
 
+  /** Called once at server startup */
   async loadModel(): Promise<void> {
-    // 1. Check if Python inference service is running
-    await this.checkPythonService();
+    // 1. Try @tensorflow/tfjs-node (Linux/Railway – has prebuilt binaries)
+    if (await this.tryLoadTfjsNode()) return;
 
+    // 2. Check for Python inference service
+    await this.checkPythonService();
     if (this.isPythonServiceAvailable) {
-      console.log('✅ Python ML inference service detected at', ML_SERVICE_URL);
+      console.log('✅ Python ML service detected at', ML_SERVICE_URL);
       return;
     }
 
-    // 2. Try to load TF.js converted model
-    await this.loadTfjsModel();
+    // 3. Try @tensorflow/tfjs with converted model.json
+    await this.tryLoadTfjsBrowser();
   }
 
-  private async checkPythonService(): Promise<void> {
+  // ─── Strategy 1: @tensorflow/tfjs-node ────────────────────────────────────
+
+  private async tryLoadTfjsNode(): Promise<boolean> {
+    try {
+      // Dynamic require so the module is optional
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const tf = require('@tensorflow/tfjs-node');
+
+      if (!fs.existsSync(H5_MODEL_PATH)) {
+        console.warn('⚠️  corn_leaf_model.h5 not found at', H5_MODEL_PATH);
+        return false;
+      }
+
+      console.log('Loading corn_leaf_model.h5 via @tensorflow/tfjs-node …');
+      this.tfjsNodeModel = await tf.loadLayersModel('file://' + H5_MODEL_PATH);
+      console.log('✅ corn_leaf_model.h5 loaded (tfjs-node)');
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Suppress the long native-binding error on Windows – it's expected
+      if (msg.includes('tfjs_binding.node')) {
+        console.warn('⚠️  @tensorflow/tfjs-node native binding unavailable (Windows dev?)');
+      } else {
+        console.warn('⚠️  @tensorflow/tfjs-node load failed:', msg);
+      }
+      return false;
+    }
+  }
+
+  // ─── Strategy 2: Python HTTP service ─────────────────────────────────────
+
+  private checkPythonService(): Promise<void> {
     return new Promise((resolve) => {
       const req = http.get(`${ML_SERVICE_URL}/health`, (res) => {
         this.isPythonServiceAvailable = res.statusCode === 200;
         resolve();
       });
-      req.on('error', () => {
-        this.isPythonServiceAvailable = false;
-        resolve();
-      });
-      req.setTimeout(2000, () => {
-        req.destroy();
-        this.isPythonServiceAvailable = false;
-        resolve();
-      });
+      req.on('error', () => { this.isPythonServiceAvailable = false; resolve(); });
+      req.setTimeout(2000, () => { req.destroy(); this.isPythonServiceAvailable = false; resolve(); });
     });
   }
 
-  private async loadTfjsModel(): Promise<void> {
+  // ─── Strategy 3: TF.js browser (converted model.json) ────────────────────
+
+  private async tryLoadTfjsBrowser(): Promise<void> {
     try {
-      const modelPath = path.join(__dirname, '../../models/model.json');
-      if (!fs.existsSync(modelPath)) {
-        console.warn('⚠️  TF.js model.json not found. Run the conversion script:');
-        console.warn('   python backend/convert_model.py');
+      if (!fs.existsSync(TFJS_MODEL_PATH)) {
+        console.warn('⚠️  model.json not found. Run: python backend/convert_model.py');
         return;
       }
-
-      // Check for real weight shards (not the placeholder .bin file)
-      const modelJson = JSON.parse(fs.readFileSync(modelPath, 'utf-8'));
-      const shardPaths: string[] = modelJson?.weightsManifest?.[0]?.paths ?? [];
-      const hasRealWeights = shardPaths.every((shard: string) => {
-        const shardPath = path.join(__dirname, '../../models', shard);
-        const size = fs.existsSync(shardPath) ? fs.statSync(shardPath).size : 0;
-        return size > 10_000; // placeholder .bin is only ~232 bytes
+      const modelJson = JSON.parse(fs.readFileSync(TFJS_MODEL_PATH, 'utf-8'));
+      const shards: string[] = modelJson?.weightsManifest?.[0]?.paths ?? [];
+      const hasRealWeights = shards.every((s: string) => {
+        const p = path.join(MODEL_DIR, s);
+        return fs.existsSync(p) && fs.statSync(p).size > 10_000;
       });
-
       if (!hasRealWeights) {
-        console.warn('⚠️  model.json weight shards appear to be placeholders.');
-        console.warn('   Convert the model first: python backend/convert_model.py');
+        console.warn('⚠️  model.json weight shards are placeholders. Convert first.');
         return;
       }
 
-      console.log('Loading TF.js model from:', modelPath);
-      this.model = await tf.loadLayersModel('file://' + modelPath);
-      this.isModelLoaded = true;
-      console.log('✅ TF.js model loaded successfully');
-    } catch (error) {
-      console.warn('⚠️  Failed to load TF.js model:', error);
-      this.isModelLoaded = false;
+      // Import tfjs + CPU backend
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const tf = require('@tensorflow/tfjs');
+      require('@tensorflow/tfjs-backend-cpu');
+
+      console.log('Loading model.json via @tensorflow/tfjs …');
+      this.tfjsModel = await tf.loadLayersModel('file://' + TFJS_MODEL_PATH);
+      console.log('✅ model.json loaded (tfjs)');
+    } catch (err) {
+      console.warn('⚠️  TF.js browser model load failed:', err);
     }
   }
 
+  // ─── Public predict ──────────────────────────────────────────────────────
+
   async predictDisease(imageBase64: string): Promise<DiseasePrediction> {
-    // Strategy 1: Python HTTP service
+    // 1. tfjs-node
+    if (this.tfjsNodeModel) {
+      try { return await this.runTfjsInference(this.tfjsNodeModel, imageBase64); }
+      catch (e) { console.warn('tfjs-node inference failed, trying next:', e); }
+    }
+
+    // 2. Python service
     if (this.isPythonServiceAvailable) {
-      try {
-        return await this.predictViaPythonService(imageBase64);
-      } catch (err) {
-        console.warn('Python service call failed, trying next strategy:', err);
-      }
+      try { return await this.predictViaPython(imageBase64); }
+      catch (e) { console.warn('Python service call failed, trying next:', e); }
     }
 
-    // Strategy 2: TF.js model
-    if (this.isModelLoaded && this.model) {
-      try {
-        return await this.predictViaTfjs(imageBase64);
-      } catch (err) {
-        console.warn('TF.js prediction failed, falling back to mock:', err);
-      }
+    // 3. TF.js browser
+    if (this.tfjsModel) {
+      try { return await this.runTfjsInference(this.tfjsModel, imageBase64); }
+      catch (e) { console.warn('tfjs inference failed, falling back to mock:', e); }
     }
 
-    // Strategy 3: Mock
-    console.warn('⚠️  Using mock prediction – no ML backend available');
+    // 4. Mock
+    console.warn('⚠️  No ML backend available – returning mock prediction');
     return this.mockPrediction();
   }
 
-  // ---------------------------------------------------------------------------
-  // Strategy 1 – Python service
-  // ---------------------------------------------------------------------------
-  private predictViaPythonService(imageBase64: string): Promise<DiseasePrediction> {
+  // ─── Shared TF.js inference ───────────────────────────────────────────────
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async runTfjsInference(model: any, imageBase64: string): Promise<DiseasePrediction> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const tf = model.inputs ? require('@tensorflow/tfjs-node') : require('@tensorflow/tfjs');
+
+    const tensor = await this.preprocessImage(imageBase64, tf);
+    const predTensor = model.predict(tensor);
+    const probs: number[] = Array.from(await predTensor.data());
+    predTensor.dispose();
+    tensor.dispose();
+
+    const maxIdx = probs.indexOf(Math.max(...probs));
+    const disease = DISEASE_CLASSES[maxIdx] ?? 'Unknown';
+    const confidence = Math.round(probs[maxIdx] * 100);
+    const info = getDiseaseInfo(disease);
+    return { disease, confidence, ...info };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async preprocessImage(imageBase64: string, tf: any): Promise<any> {
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sharp = require('sharp') as typeof import('sharp');
+      const { data } = await sharp(buffer).resize(224, 224).removeAlpha().raw()
+        .toBuffer({ resolveWithObject: true });
+      const pixels = new Float32Array(data.length);
+      for (let i = 0; i < data.length; i++) pixels[i] = data[i] / 255.0;
+      return tf.tensor4d(pixels, [1, 224, 224, 3]);
+    } catch {
+      return tf.zeros([1, 224, 224, 3]);
+    }
+  }
+
+  // ─── Python HTTP service ──────────────────────────────────────────────────
+
+  private predictViaPython(imageBase64: string): Promise<DiseasePrediction> {
     return new Promise((resolve, reject) => {
       const body = JSON.stringify({ image: imageBase64 });
+      const url = new URL(`${ML_SERVICE_URL}/predict`);
       const options = {
-        hostname: ML_SERVICE_URL.replace(/^https?:\/\//, '').split(':')[0],
-        port: parseInt(ML_SERVICE_URL.split(':').pop() || '5001', 10),
-        path: '/predict',
+        hostname: url.hostname,
+        port: Number(url.port) || 5001,
+        path: url.pathname,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-        },
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
       };
-
       const req = http.request(options, (res) => {
         let data = '';
-        res.on('data', (chunk) => (data += chunk));
+        res.on('data', (c) => (data += c));
         res.on('end', () => {
           try {
-            const parsed = JSON.parse(data);
-            if (parsed.error) return reject(new Error(parsed.error));
-            const disease = parsed.disease as string;
-            const confidence = Math.round((parsed.confidence ?? 0) * 100);
-            const diseaseInfo = getDiseaseInfo(disease);
-            resolve({ disease, confidence, ...diseaseInfo });
-          } catch (e) {
-            reject(e);
-          }
+            const p = JSON.parse(data);
+            if (p.error) return reject(new Error(p.error));
+            const disease = p.disease as string;
+            const confidence = Math.round((p.confidence ?? 0) * 100);
+            resolve({ disease, confidence, ...getDiseaseInfo(disease) });
+          } catch (e) { reject(e); }
         });
       });
-
       req.on('error', reject);
       req.setTimeout(15000, () => { req.destroy(); reject(new Error('Python service timeout')); });
       req.write(body);
@@ -166,58 +231,12 @@ class AIService {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // Strategy 2 – TF.js model (tfjs format)
-  // ---------------------------------------------------------------------------
-  private async predictViaTfjs(imageBase64: string): Promise<DiseasePrediction> {
-    const tensor = await this.preprocessImageTfjs(imageBase64);
-    const predTensor = this.model!.predict(tensor) as tf.Tensor;
-    const probs = Array.from(await predTensor.data());
-    predTensor.dispose();
-    tensor.dispose();
+  // ─── Mock ─────────────────────────────────────────────────────────────────
 
-    const maxIdx = probs.indexOf(Math.max(...probs));
-    const disease = DISEASE_CLASSES[maxIdx] ?? 'Unknown';
-    const confidence = Math.round(probs[maxIdx] * 100);
-    const diseaseInfo = getDiseaseInfo(disease);
-
-    return { disease, confidence, ...diseaseInfo };
-  }
-
-  /** Decode base64, resize to 224×224, normalise [0,1] */
-  private async preprocessImageTfjs(imageBase64: string): Promise<tf.Tensor4D> {
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Use sharp if available, otherwise fall back to a simple float32 tensor
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const sharp = require('sharp') as typeof import('sharp');
-      const { data } = await sharp(buffer)
-        .resize(224, 224)
-        .removeAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-
-      const pixels = new Float32Array(data.length);
-      for (let i = 0; i < data.length; i++) pixels[i] = data[i] / 255.0;
-      return tf.tensor4d(pixels, [1, 224, 224, 3]);
-    } catch {
-      // Fallback: create a zero tensor of the right shape
-      console.warn('sharp not available, using zero tensor as fallback for image preprocessing');
-      return tf.zeros([1, 224, 224, 3]) as tf.Tensor4D;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Strategy 3 – Mock
-  // ---------------------------------------------------------------------------
   private mockPrediction(): DiseasePrediction {
-    const diseases = DISEASE_CLASSES;
-    const disease = diseases[Math.floor(Math.random() * diseases.length)];
+    const disease = DISEASE_CLASSES[Math.floor(Math.random() * DISEASE_CLASSES.length)];
     const confidence = Math.floor(Math.random() * 20) + 80;
-    const diseaseInfo = getDiseaseInfo(disease);
-    return { disease, confidence, ...diseaseInfo };
+    return { disease, confidence, ...getDiseaseInfo(disease) };
   }
 }
 

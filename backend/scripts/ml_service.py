@@ -155,8 +155,7 @@ class Handler(BaseHTTPRequestHandler):
 # Entry-point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    # Render sets PORT; locally we use ML_SERVICE_PORT (default 5001)
-    port = int(os.environ.get("PORT", os.environ.get("ML_SERVICE_PORT", 5001)))
+    port = int(os.environ.get("ML_SERVICE_PORT", 5001))
     load_model()
     server = HTTPServer(("0.0.0.0", port), Handler)
     log.info("ML inference service listening on http://0.0.0.0:%d", port)

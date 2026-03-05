@@ -6,8 +6,8 @@ The backend supports **three strategies** for running corn leaf disease predicti
 
 | Priority | Strategy | Requirement |
 |----------|----------|-------------|
-| 1 | **Python ML service** (`ml_service.py`) | Python 3 + TensorFlow + Pillow |
-| 2 | **TF.js converted model** (`models/model.json`) | Run `convert_model.py` once |
+| 1 | **tfjs-node** (native, Linux) | Deploy to Railway – `@tensorflow/tfjs-node` has prebuilt Linux binaries |
+| 2 | **Python ML service** (`scripts/ml_service.py`) | Python 3 + TensorFlow + Pillow |
 | 3 | **Mock prediction** (random, dev-only) | Nothing – always available |
 
 ---
@@ -32,7 +32,23 @@ All model files live in `backend/models/`:
 
 ---
 
-## Option A – Python ML Service (Recommended)
+## Option A – Railway (Recommended for Production)
+
+Deploy to **Railway** – the backend runs on Linux where `@tensorflow/tfjs-node` works with prebuilt binaries, so the model loads directly without any extra setup!
+
+See [DEPLOYMENT.md](../DEPLOYMENT.md) for full Railway setup instructions.
+
+Quick steps:
+1. Create a Railway project from your GitHub repo
+2. Add a volume at `/app/data` (for SQLite) and `/app/uploads` (for images)
+3. Set environment variables (see DEPLOYMENT.md)
+4. Railway auto-builds from `backend/nixpacks.toml` → installs Node + Python deps → builds → runs!
+
+The ML model is baked into the Docker image – no separate hosting needed.
+
+---
+
+## Option B – Python ML Service (Local Development)
 
 ### 1. Install Python dependencies
 
@@ -45,7 +61,7 @@ pip install flask tensorflow pillow
 
 ```bash
 # From the project root
-python backend/ml_service.py
+python backend/scripts/ml_service.py
 ```
 
 The service runs on **http://localhost:5001** by default.  
@@ -63,7 +79,7 @@ The Node.js backend auto-detects the Python service at startup and routes predic
 
 ---
 
-## Option B – TF.js Converted Model
+## Option C – TF.js Converted Model (No Python at Runtime)
 
 If you want the Node.js backend to run inference without a separate Python process:
 
@@ -76,7 +92,7 @@ pip install tensorflowjs tensorflow
 ### 2. Run the conversion script
 
 ```bash
-python backend/convert_model.py
+python backend/scripts/convert_model.py
 ```
 
 This overwrites `backend/models/model.json` and `group1-shard1of1.bin` with real weight data.
@@ -106,7 +122,7 @@ Add these to `backend/.env` as needed.
 ## Verifying the Setup
 
 ```bash
-# Check the Python service health
+# Check the Python service health (if running)
 curl http://localhost:5001/health
 
 # Expected response

@@ -1,181 +1,169 @@
-# Deployment Guide – Render.com
+# Deployment Guide – Railway
 
-This guide walks you through deploying the Corn Leaf Disease Detection backend (Node.js + Python ML) to [Render.com](https://render.com) using the `render.yaml` Blueprint.
+## Overview
 
----
+This backend runs on **Railway** with the ML model bundled inside the Docker image.
+The `@tensorflow/tfjs-node` package works on Linux (prebuilt binaries for Node 18).
 
-## Architecture on Render
-
-```
-Mobile App / Browser
-        │
-        ▼
-┌───────────────────────────────┐
-│  corn-leaf-backend (Node.js)  │  ← Express API  (port 10000)
-│  https://corn-leaf-backend…   │
-└────────────┬──────────────────┘
-             │  POST /predict
-             ▼
-┌───────────────────────────────┐
-│  corn-leaf-ml  (Python)       │  ← ML inference (port 10000)
-│  https://corn-leaf-ml…        │
-│  loads: models/corn_leaf_…h5  │
-└───────────────────────────────┘
-             │
-             ▼
-┌───────────────────────────────┐
-│  corn-leaf-db (PostgreSQL)    │  ← Free managed DB
-└───────────────────────────────┘
-```
+| Component | Platform | Notes |
+|-----------|----------|-------|
+| Node.js backend + ML model | **Railway** | Nixpacks build, Linux amd64 |
+| SQLite database | Railway persistent volume | Mounted at `/app/data` |
+| User-uploaded images | Railway persistent volume | Mounted at `/app/uploads` |
 
 ---
 
 ## Prerequisites
 
-1. A free [Render.com](https://render.com) account
-2. Code pushed to a **GitHub repository** (public or private)
-3. The model files must be committed to git (they're in `backend/models/`)
-
-### Verify model files are tracked by git
-
-```bash
-git status backend/models/
-# If they show as untracked, add them:
-git add backend/models/corn_leaf_model.h5
-git add backend/models/model.weights.h5
-git commit -m "chore: add trained model files"
-git push
-```
-
-> **Note**: The `.h5` files are ~10–11 MB each, which is well within GitHub's 100 MB file limit.
-
----
-
-## Step 1 – Update the Prisma schema for PostgreSQL
-
-The local schema uses SQLite.  For Render you need PostgreSQL.
-
-1. Edit [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma) and change line 6:
-   ```diff
-   - provider = "sqlite"
-   + provider = "postgresql"
-   ```
-
-2. Delete old SQLite migrations (they won't work with Postgres):
+1. **GitHub repo** with this code (model files are included – both `.h5` files are ~10 MB each, under GitHub's 100 MB limit).
+2. A free **[Railway](https://railway.app)** account.
+3. Railway CLI (optional):
    ```bash
-   rm -rf backend/prisma/migrations
+   npm install -g @railway/cli
+   railway login
    ```
 
-3. Create a new migration (you'll need a local Postgres or just let Render run it):
-   ```bash
-   cd backend
-   DATABASE_URL="postgresql://..." npx prisma migrate dev --name init
-   ```
-   Or skip this and let `prisma migrate deploy` run on Render using the generated schema.
+---
 
-4. Commit the updated schema:
-   ```bash
-   git add backend/prisma/schema.prisma
-   git commit -m "chore: switch Prisma provider to postgresql for production"
-   git push
-   ```
+## Step 1 – Create a Railway project
 
-> **Tip**: To keep SQLite for local dev while using PostgreSQL on Render, maintain two schemas:
-> `schema.prisma` (postgresql) and do local dev with `DATABASE_URL=file:./dev.db` plus a forked SQLite schema.
+1. Go to [railway.app](https://railway.app) → **New Project**
+2. Choose **Deploy from GitHub repo** → select this repository
+3. **IMPORTANT:** In the service settings, set **Root Directory** to `backend`
+
+   (This tells Railway to look for `package.json`, `nixpacks.toml`, etc. in the `backend/` subfolder.)
 
 ---
 
-## Step 2 – Deploy with Render Blueprint
+## Step 2 – Add persistent volumes
 
-1. Go to **https://render.com/deploy** and paste your GitHub repository URL.
-2. Click **Apply** — Render reads `render.yaml` and creates:
-   - `corn-leaf-backend` (Node.js web service)
-   - `corn-leaf-ml` (Python ML service)
-   - `corn-leaf-db` (PostgreSQL database)
+In the Railway dashboard for your service:
 
-3. Wait for all three services to finish deploying (~5–10 minutes).
-
----
-
-## Step 3 – Wire up the ML service URL
-
-After both services are deployed:
-
-1. Go to `corn-leaf-backend` → **Environment** tab
-2. Update the `ML_SERVICE_URL` variable to the deployed URL of `corn-leaf-ml`:
-   ```
-   ML_SERVICE_URL = https://corn-leaf-ml.onrender.com
-   ```
-3. Click **Save** — the backend service will automatically restart.
+1. Click **Settings → Volumes → Add Volume**
+2. Mount path: `/app/data` → **Add Volume**
+3. Click **Add Volume** again
+4. Mount path: `/app/uploads` → **Add Volume**
 
 ---
 
-## Step 4 – Verify
+## Step 3 – Set environment variables
 
-```bash
-# Check the ML service is healthy and the model is loaded
-curl https://corn-leaf-ml.onrender.com/health
-# Expected: {"status": "ok", "model_loaded": true}
+In **Settings → Variables**, add:
 
-# Check the backend API
-curl https://corn-leaf-backend.onrender.com/
-# Expected: {"message": "Welcome to Corn Leaf Disease Detector API", ...}
-```
+| Variable | Value |
+|----------|-------|
+| `NODE_ENV` | `production` |
+| `DATABASE_URL` | `file:/app/data/prod.db` |
+| `JWT_SECRET` | *(generate with `openssl rand -hex 32`)* |
+| `JWT_REFRESH_SECRET` | *(generate with `openssl rand -hex 32`)* |
+| `CORS_ORIGIN` | `*` *(or your frontend domain)* |
 
----
-
-## Environment Variables Reference
-
-### corn-leaf-backend (Node.js)
-
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `NODE_ENV` | `production` | Set automatically |
-| `PORT` | `10000` | Render's external port |
-| `DATABASE_URL` | injected from DB | Set by Render Blueprint |
-| `JWT_SECRET` | auto-generated | Set by `generateValue: true` |
-| `ML_SERVICE_URL` | `https://corn-leaf-ml.onrender.com` | Update after deploying ML |
-| `CORS_ORIGIN` | `*` | Restrict to your frontend URL |
-
-### corn-leaf-ml (Python)
-
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `PORT` | `10000` | Render's external port |
+Railway sets `PORT` automatically.
 
 ---
 
-## Free Tier Limitations
+## Step 4 – Deploy
 
-| Service | Limitation |
-|---------|-----------|
-| Node.js | Spins down after 15 min inactivity (cold start ~30 sec) |
-| Python ML | Spins down after 15 min inactivity; first request loads TensorFlow (~30 sec) |
-| PostgreSQL | 1 GB storage, expires in 90 days (then you must recreate) |
-
----
-
-## Updating the Deployed App
-
+**Option A – Push to GitHub** (recommended):
 ```bash
 git add .
-git commit -m "..."
-git push
-# Render auto-deploys on every push to the main branch
+git commit -m "Add Railway deployment config"
+git push origin main
+```
+
+Railway auto-deploys on every push.
+
+**Option B – Manual deploy:**
+```bash
+railway up
+```
+
+The build log will show:
+```
+✓ Node.js 18 detected
+✓ Python 3.11 detected
+✓ Build completed
+✓ Deployment completed
 ```
 
 ---
 
-## Alternative: Deploy Only the Python ML Service
+## Step 5 – Verify
 
-If you already have a hosting provider for the Node.js backend, you can deploy just the ML service:
+```bash
+# Replace with your Railway URL
+curl https://your-service.up.railway.app/
 
-1. Create a new **Web Service** on Render
-2. Set:
-   - Runtime: **Python 3**
-   - Root directory: `backend`
-   - Build command: `pip install tensorflow-cpu pillow`
-   - Start command: `python ml_service.py`
-3. Set env var `PORT=10000`
+# Expected:
+{"message":"Welcome to Corn Leaf Disease Detector API","status":"running",...}
+```
 
-Then point `ML_SERVICE_URL` in your Node.js backend to the deployed URL.
+Test the ML endpoint:
+```bash
+curl -X POST https://your-service.up.railway.app/api/detection/analyze \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "image=@corn_leaf.jpg"
+```
+
+---
+
+## How It Works
+
+1. **Build**: Railway runs `nixpacks.toml` in `backend/`:
+   - Installs Node 18 dependencies (`npm install`)
+   - Installs Python + TensorFlow (`pip install tensorflow-cpu pillow`)
+   - Generates Prisma client (`npx prisma generate`)
+   - Compiles TypeScript (`npm run build`)
+
+2. **Model**: The `corn_leaf_model.h5` file is copied into the image at build time.
+   On startup, `ai.service.ts` loads it via `@tensorflow/tfjs-node`.
+
+3. **Startup**: Runs `npx prisma migrate deploy` then `node dist/app.js`
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Build fails with `npm ci` error | Ensure `Root Directory = backend` in Railway settings |
+| Model not loading | Check logs for `tfjs-node` messages – should say "✅ corn_leaf_model.h5 loaded" |
+| Database not persisting | Verify `/app/data` volume is mounted |
+| CORS errors | Set `CORS_ORIGIN` to your exact frontend URL |
+| Uploaded images missing | Verify `/app/uploads` volume is mounted |
+
+---
+
+## Updating the Model
+
+1. Replace `backend/models/corn_leaf_model.h5` in your repo
+2. Push to GitHub → Railway rebuilds automatically
+
+---
+
+## Local Development
+
+```bash
+# Install deps
+cd backend && npm install
+
+# Copy env template
+cp backend/.env.example backend/.env
+
+# Run migrations
+npx prisma migrate dev
+
+# Start backend
+npm run dev
+```
+
+For local ML inference:
+```bash
+# Python service (option A)
+pip install tensorflow pillow
+python backend/scripts/ml_service.py   # runs on :5001
+
+# Or convert to TF.js (option B)
+pip install tensorflowjs tensorflow
+python backend/scripts/convert_model.py
+```

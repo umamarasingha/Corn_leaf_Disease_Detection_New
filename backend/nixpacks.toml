@@ -1,0 +1,23 @@
+# Nixpacks configuration for Railway – backend deployment
+# This tells Railway exactly how to build and run the backend.
+
+[start]
+# What command to run to start the app
+run = "npx prisma migrate deploy && node dist/app.js"
+
+[build]
+# What command to run to build the app
+# First install Node dependencies, then install Python deps for tfjs-node, then build
+build = "npm install && pip install --no-cache-dir tensorflow-cpu pillow && npx prisma generate && npm run build"
+
+# Use Node 18 LTS (tfjs-node has prebuilt binaries for Node 18)
+[nodejs]
+version = "18"
+
+# Install Python 3.11 (for TensorFlow if you want to run ml_service.py locally)
+[python]
+version = "3.11"
+
+# Apt packages needed for sharp and tfjs-node
+[apt]
+packages = ["libvips-dev", "build-essential"]
