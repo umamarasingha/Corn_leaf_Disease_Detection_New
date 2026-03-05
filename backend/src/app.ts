@@ -27,6 +27,10 @@ app.use(apiRateLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to Corn Leaf Disease Detector API',
@@ -61,17 +65,15 @@ app.use(notFound);
 app.use(errorHandler);
 
 async function startServer() {
-  try {
-    await aiService.loadModel();
-    console.log('AI Service initialized');
-  } catch (error) {
-    console.warn('AI Service initialization failed, using fallback mode');
-  }
-
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
   });
+
+  // Load AI model in background so the server is immediately available
+  aiService.loadModel()
+    .then(() => console.log('AI Service initialized'))
+    .catch(() => console.warn('AI Service initialization failed, using fallback mode'));
 }
 
 startServer().catch(console.error);
