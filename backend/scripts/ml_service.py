@@ -30,7 +30,12 @@ log = logging.getLogger("ml_service")
 # ---------------------------------------------------------------------------
 # Load model
 # ---------------------------------------------------------------------------
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
+# When run locally: backend/scripts/../models = backend/models
+# When run in Docker: /app/../models would be wrong, so also check /app/models
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_LOCAL_MODEL_DIR = os.path.join(_SCRIPT_DIR, "..", "models")
+_DOCKER_MODEL_DIR = os.path.join(os.getcwd(), "models")
+MODEL_DIR = _LOCAL_MODEL_DIR if os.path.isdir(_LOCAL_MODEL_DIR) else _DOCKER_MODEL_DIR
 MODEL_PATH = os.path.join(MODEL_DIR, "corn_leaf_model.h5")
 
 # Disease class names – must match the alphabetical order of training labels

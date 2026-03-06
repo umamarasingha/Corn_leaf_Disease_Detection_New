@@ -6,9 +6,10 @@
 
 FROM node:18-slim
 
-# Minimal runtime deps (no libvips/build-essential – no native TF binding)
+# Runtime deps: ca-certificates + libvips for sharp image processing
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
+        libvips-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

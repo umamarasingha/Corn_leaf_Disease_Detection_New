@@ -204,7 +204,7 @@ export const authAPI = {
 // Detection API
 export const detectionAPI = {
   detectDisease: (formData: FormData) =>
-    api.post('/api/detect', formData, {
+    api.post('/api/detection/analyze', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
     

@@ -148,7 +148,7 @@ export async function getPost(req: AuthRequest, res: Response) {
         createdAt: comment.createdAt,
       })),
       createdAt: post.createdAt,
-      isLiked: post.likes.some(like => like.userId === req.user!.userId),
+      isLiked: req.user?.userId ? post.likes.some(like => like.userId === req.user!.userId) : false,
     };
 
     res.json(postWithLikeStatus);

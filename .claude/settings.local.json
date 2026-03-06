@@ -16,7 +16,15 @@
       "Bash(cmd.exe //c \"cd /d E:\\\\Corn_leaf_Disease_Detection_New\\\\android && set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat assembleDebug\")",
       "Bash(cmd.exe //c \"cd /d E:\\\\Corn_leaf_Disease_Detection_New\\\\android && set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& .\\\\gradlew.bat assembleDebug\")",
       "Bash(echo \"sdk.dir=$LOCALAPPDATA/Android/Sdk\")",
-      "Bash(echo $LOCALAPPDATA)"
+      "Bash(echo $LOCALAPPDATA)",
+      "Bash(npx react-scripts build)",
+      "Bash(export JAVA_HOME=\"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\")",
+      "Bash(\"C:/Program Files/Android/Android Studio/jbr/bin/java\" -cp \"gradle/wrapper/gradle-wrapper.jar\" org.gradle.wrapper.GradleWrapperMain assembleDebug)",
+      "Bash(npm install @capacitor/camera)",
+      "Bash(python -c \"import tensorflow; print\\(''tf'', tensorflow.__version__\\)\")",
+      "Bash(python -c \"import tensorflowjs; print\\(''tfjs'', tensorflowjs.__version__\\)\")",
+      "Bash(curl -s --max-time 5 \"https://corn-leaf-backend-production.up.railway.app/health\")",
+      "Bash(curl -s --max-time 5 \"https://corn-leaf-backend-production.up.railway.app/\")"
     ]
   }
 }

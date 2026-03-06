@@ -2,14 +2,16 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import Webcam from 'react-webcam';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import apiService from '../services/api';
-import { 
-  Camera, 
-  Upload, 
-  X, 
-  CheckCircle, 
-  AlertTriangle, 
-  Info, 
+import {
+  Camera,
+  Upload,
+  X,
+  CheckCircle,
+  AlertTriangle,
+  Info,
   RefreshCw,
   Brain,
   Cpu
@@ -81,6 +83,27 @@ const DetectDisease: React.FC = () => {
       severity: 'low' as const,
     },
   ];
+
+  const isNativePlatform = Capacitor.isNativePlatform();
+
+  const openNativeCamera = async () => {
+    try {
+      const photo = await CapCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+      if (photo.dataUrl) {
+        setSelectedImage(photo.dataUrl);
+      }
+    } catch (error: any) {
+      if (error?.message !== 'User cancelled photos app') {
+        console.error('Native camera error:', error);
+        alert(t('Failed to open camera. Please try again.'));
+      }
+    }
+  };
 
   const capturePhoto = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -251,8 +274,12 @@ const DetectDisease: React.FC = () => {
               </p>
               <button
                 onClick={() => {
-                  setIsUsingCamera(true);
-                  setShowCamera(true);
+                  if (isNativePlatform) {
+                    openNativeCamera();
+                  } else {
+                    setIsUsingCamera(true);
+                    setShowCamera(true);
+                  }
                 }}
                 className="btn-secondary text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >

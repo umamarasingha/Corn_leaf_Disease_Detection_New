@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Leaf, Mail, ArrowLeft } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const ForgotPassword: React.FC = () => {
   const { t } = useLanguage();
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,33 +15,18 @@ const ForgotPassword: React.FC = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
-    if (newPassword.length < 6) {
-      setError(t('New password must be at least 6 characters.'));
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError(t('Passwords do not match.'));
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      await authAPI.resetPassword(email, newPassword);
-      setSuccess(t('Password reset successful. You can now sign in with your new password.'));
+      await authAPI.forgotPassword(email);
+      setSuccess(t('If an account exists for this email, password reset instructions have been sent.'));
       setEmail('');
-      setNewPassword('');
-      setConfirmPassword('');
     } catch (err: any) {
-      console.error('Reset password error:', err);
-      if (err?.response?.status === 400) {
-        setError(err.response.data?.error || t('Unable to reset password. Please try again.'));
-      } else if (err?.request) {
+      console.error('Forgot password error:', err);
+      if (err?.request) {
         setError(t('Network error. Please check your connection and try again.'));
       } else {
-        setError(t('Failed to reset password. Please try again.'));
+        setError(t('Failed to send reset email. Please try again.'));
       }
     } finally {
       setIsLoading(false);
@@ -63,7 +44,7 @@ const ForgotPassword: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold text-center">{t('Forgot Password')}</h1>
           <p className="text-center text-white/80 mt-2">
-            {t('Enter your new password')}
+            {t('Enter your email to receive reset instructions')}
           </p>
         </div>
 
@@ -73,62 +54,15 @@ const ForgotPassword: React.FC = () => {
               {t('Email Address')}
             </label>
             <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-field"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder={t('Enter your email')}
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('New Password')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type={showNewPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="input-field pl-10 pr-10"
-                placeholder={t('Enter new password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-              >
-                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('Confirm New Password')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="input-field pl-10 pr-10"
-                placeholder={t('Confirm new password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
           </div>
 
@@ -147,9 +81,9 @@ const ForgotPassword: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? t('Resetting...') : t('Reset Password')}
+            {isLoading ? t('Sending...') : t('Send Reset Instructions')}
           </button>
         </form>
 

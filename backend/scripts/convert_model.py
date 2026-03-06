@@ -15,7 +15,7 @@ Usage:
 import os
 import sys
 
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 H5_PATH = os.path.join(MODEL_DIR, "corn_leaf_model.h5")
 OUT_DIR = MODEL_DIR  # overwrite model.json + *.bin in the same folder
 

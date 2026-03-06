@@ -30,7 +30,7 @@ model User {
 model Post {
   id          String    @id @default(uuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   content     String
   images      String
@@ -46,8 +46,8 @@ model Comment {
   id        String    @id @default(uuid())
   postId    String
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  post      Post      @relation(fields: [postId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   content   String
   createdAt DateTime  @default(now())
 }
@@ -56,17 +56,17 @@ model Like {
   id        String    @id @default(uuid())
   postId    String
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  post      Post      @relation(fields: [postId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
-  
+
   @@unique([postId, userId])
 }
 
 model Detection {
   id          String    @id @default(uuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   imageUrl    String
   disease     String
   confidence  Float
@@ -92,7 +92,7 @@ model News {
 model RoleHistory {
   id        String    @id @default(uuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   oldRole   String
   newRole   String
   changedBy String
