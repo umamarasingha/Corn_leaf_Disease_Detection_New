@@ -26,8 +26,8 @@ RUN npx prisma generate
 # Compile TypeScript
 RUN npm run build
 
-# Remove dev dependencies to keep image slim
-RUN npm prune --omit=dev
+# Remove dev dependencies but keep prisma CLI for runtime db push
+RUN npm prune --omit=dev && npm install prisma@5.22.0
 
 # ── Model files are read from ./models (committed in repo) ───────────────────
 # The Dockerfile COPY above already copies backend/models/*
@@ -39,5 +39,5 @@ ENV NODE_ENV=production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-# Sync DB schema then start the server
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/app.js"]
+# Sync DB schema then start the server (use ; so node starts even if push fails)
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss 2>&1 || echo 'prisma db push failed'; node dist/app.js"]
