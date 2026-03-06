@@ -33,5 +33,4 @@ ENV NODE_ENV=production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-# Use ENTRYPOINT so Railway cannot override with a custom start command
-ENTRYPOINT ["node", "dist/app.js"]
+CMD ["node", "dist/app.js"]
