@@ -15,7 +15,7 @@ WORKDIR /app
 
 # ── Copy backend source ──────────────────────────────────────────────────────
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy the rest of the backend
 COPY backend/ .
@@ -25,6 +25,9 @@ RUN npx prisma generate
 
 # Compile TypeScript
 RUN npm run build
+
+# Remove dev dependencies to keep image slim
+RUN npm prune --omit=dev
 
 # ── Model files are read from ./models (committed in repo) ───────────────────
 # The Dockerfile COPY above already copies backend/models/*
