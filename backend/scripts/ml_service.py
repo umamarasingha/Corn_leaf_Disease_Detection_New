@@ -71,12 +71,12 @@ def load_model():
 # Image preprocessing
 # ---------------------------------------------------------------------------
 def preprocess_image(image_bytes: bytes):
-    """Decode image bytes and return a (1, 224, 224, 3) float32 numpy array."""
+    """Decode image bytes and return a (1, 256, 256, 3) float32 numpy array."""
     from PIL import Image  # type: ignore
     import numpy as np
 
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = img.resize((224, 224))
+    img = img.resize((256, 256))
     arr = np.array(img, dtype=np.float32) / 255.0
     return arr[np.newaxis, ...]  # add batch dimension
 
