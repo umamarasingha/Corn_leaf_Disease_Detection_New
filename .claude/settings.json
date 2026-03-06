@@ -16,7 +16,26 @@
       "Bash(npx @railway/cli logs --deployment cabbb91f-f7f8-458f-945b-e41c61d84417)",
       "Bash(npx @railway/cli variables set \"RAILWAY_START_COMMAND=node dist/app.js\")",
       "Bash(npx @railway/cli service --help)",
-      "Bash(npx @railway/cli variables delete RAILWAY_START_COMMAND)"
+      "Bash(npx @railway/cli variables delete RAILWAY_START_COMMAND)",
+      "Bash(npx @railway/cli logs --service corn-leaf-ml)",
+      "Bash(npx @railway/cli variables --service corn-leaf-backend)",
+      "Bash(npx @railway/cli variables set ML_SERVICE_URL=\"http://corn-leaf-ml.railway.internal:10000\" --service corn-leaf-backend)",
+      "Bash(python -c \"import json; d=json.load\\(open\\(''backend/models/config.json''\\)\\); print\\(d.get\\(''class_name'',''?''\\)\\); print\\(json.dumps\\(d, indent=2\\)[:2000]\\)\")",
+      "Bash(npx @railway/cli logs --service corn-leaf-backend)",
+      "Bash(npx @railway/cli service status)",
+      "Bash(npx @railway/cli run -- env)",
+      "Bash(npx @railway/cli service redeploy corn-leaf-backend)",
+      "Bash(npx @railway/cli service redeploy --help)",
+      "Bash(npx @railway/cli service redeploy -s corn-leaf-backend -y)",
+      "Bash(npx @railway/cli service logs -s corn-leaf-backend)",
+      "Bash(npx @railway/cli service status -s corn-leaf-backend)",
+      "Bash(npx @railway/cli service status -s corn-leaf-ml)",
+      "Bash(npx @railway/cli service logs -s corn-leaf-ml)",
+      "Bash(npx @railway/cli variables -s corn-leaf-ml)",
+      "Bash(curl -s https://corn-leaf-ml-production.up.railway.app/health)",
+      "Bash(npx @railway/cli variables set ML_SERVICE_URL=\"https://corn-leaf-ml-production.up.railway.app\" --service corn-leaf-backend)",
+      "Bash(npm install @google/generative-ai)",
+      "Bash(npx @railway/cli variables set GEMINI_API_KEY=\"AIzaSyAEWRSQUdtZkqmdM4l9FIG5dFhONxX3K5M\" --service corn-leaf-backend)"
     ]
   }
 }
