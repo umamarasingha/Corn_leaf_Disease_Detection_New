@@ -6,7 +6,7 @@
 
 FROM node:18-slim
 
-# cache-bust: v2
+# cache-bust: v3 – moved prisma to deps
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
