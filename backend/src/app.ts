@@ -1,5 +1,3 @@
-console.log('[boot] process starting, NODE_ENV=' + process.env.NODE_ENV + ', PORT=' + process.env.PORT);
-
 // Catch fatal errors so Railway logs show what crashed
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -9,18 +7,19 @@ process.on('unhandledRejection', (err) => {
   console.error('UNHANDLED REJECTION:', err);
 });
 
+console.log('[boot] process starting, NODE_ENV=' + process.env.NODE_ENV + ', PORT=' + process.env.PORT);
+
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import dotenv from 'dotenv';
-import { aiService } from './services/ai.service';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { apiRateLimiter } from './middleware/rateLimit.middleware';
 
 dotenv.config();
-console.log('[boot] imports loaded, configuring express');
+console.log('[boot] core imports loaded');
 
 const app: Application = express();
 const PORT = process.env.PORT || 8000;
@@ -29,7 +28,6 @@ const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
   .map(s => s.trim());
 
-// Capacitor WebView uses https://localhost or capacitor://localhost
 const allowedOrigins = [
   ...corsOrigins,
   'https://localhost',
@@ -40,7 +38,6 @@ const allowedOrigins = [
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -57,16 +54,8 @@ app.use(apiRateLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/health', async (req, res) => {
-  const mlUrl = process.env.ML_SERVICE_URL || 'not set';
-  let mlStatus = 'unknown';
-  try {
-    const { isPythonAvailable } = await import('./services/ai.service').then(m => ({
-      isPythonAvailable: (m.aiService as any).isPythonServiceAvailable
-    }));
-    mlStatus = isPythonAvailable ? 'connected' : 'disconnected';
-  } catch { mlStatus = 'error'; }
-  res.json({ status: 'ok', ml_service_url: mlUrl, ml_status: mlStatus });
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.get('/', (req, res) => {
@@ -78,55 +67,69 @@ app.get('/', (req, res) => {
   });
 });
 
-import authRoutes from './routes/auth.routes';
-import detectionRoutes from './routes/detection.routes';
-import communityRoutes from './routes/community.routes';
-import adminRoutes from './routes/admin.routes';
-import chatRoutes from './routes/chat.routes';
-import newsRoutes from './routes/news.routes';
-import { updateProfile, changePassword } from './controllers/auth.controller';
-import { authenticateToken } from './middleware/auth.middleware';
-import { changePasswordValidation } from './utils/validators';
-import { validateRequest } from './middleware/validation.middleware';
-
-app.use('/api/auth', authRoutes);
-app.use('/api/detection', detectionRoutes);
-app.use('/api/community', communityRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/news', newsRoutes);
-
-// User routes to match frontend API calls
-import { uploadSingle } from './config/multer';
-app.put('/api/user/profile', authenticateToken, uploadSingle, updateProfile);
-app.put('/api/user/change-password', authenticateToken, changePasswordValidation, validateRequest, changePassword);
-app.delete('/api/user/account', authenticateToken, async (req: any, res: any) => {
-  try {
-    const userId = req.user!.userId;
-    const prisma = (await import('./config/database')).default;
-    await prisma.detection.deleteMany({ where: { userId } });
-    await prisma.comment.deleteMany({ where: { userId } });
-    await prisma.like.deleteMany({ where: { userId } });
-    await prisma.post.deleteMany({ where: { userId } });
-    await prisma.roleHistory.deleteMany({ where: { userId } });
-    await prisma.user.delete({ where: { id: userId } });
-    res.json({ message: 'Account deleted successfully' });
-  } catch (error: any) {
-    console.error('Delete account error:', error);
-    res.status(500).json({ error: 'Failed to delete account' });
-  }
-});
-
-app.use(notFound);
-app.use(errorHandler);
-
+// ── Start server FIRST, then load routes ────────────────────────────────────
 async function startServer() {
   console.log('[boot] starting server on port', PORT);
+
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`[boot] Server is running on port ${PORT}`);
   });
 
-  // Sync DB schema in background (creates tables if they don't exist)
+  // Load routes dynamically so a module-level crash doesn't kill the server
+  try {
+    console.log('[boot] loading routes...');
+    const authRoutes = require('./routes/auth.routes').default;
+    const detectionRoutes = require('./routes/detection.routes').default;
+    const communityRoutes = require('./routes/community.routes').default;
+    const adminRoutes = require('./routes/admin.routes').default;
+    const chatRoutes = require('./routes/chat.routes').default;
+    const newsRoutes = require('./routes/news.routes').default;
+    const { updateProfile, changePassword } = require('./controllers/auth.controller');
+    const { authenticateToken } = require('./middleware/auth.middleware');
+    const { changePasswordValidation } = require('./utils/validators');
+    const { validateRequest } = require('./middleware/validation.middleware');
+    const { uploadSingle } = require('./config/multer');
+
+    app.use('/api/auth', authRoutes);
+    app.use('/api/detection', detectionRoutes);
+    app.use('/api/community', communityRoutes);
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/chat', chatRoutes);
+    app.use('/api/news', newsRoutes);
+
+    app.put('/api/user/profile', authenticateToken, uploadSingle, updateProfile);
+    app.put('/api/user/change-password', authenticateToken, changePasswordValidation, validateRequest, changePassword);
+    app.delete('/api/user/account', authenticateToken, async (req: any, res: any) => {
+      try {
+        const userId = req.user!.userId;
+        const prisma = (await import('./config/database')).default;
+        await prisma.detection.deleteMany({ where: { userId } });
+        await prisma.comment.deleteMany({ where: { userId } });
+        await prisma.like.deleteMany({ where: { userId } });
+        await prisma.post.deleteMany({ where: { userId } });
+        await prisma.roleHistory.deleteMany({ where: { userId } });
+        await prisma.user.delete({ where: { id: userId } });
+        res.json({ message: 'Account deleted successfully' });
+      } catch (error: any) {
+        console.error('Delete account error:', error);
+        res.status(500).json({ error: 'Failed to delete account' });
+      }
+    });
+
+    // These must be LAST
+    app.use(notFound);
+    app.use(errorHandler);
+
+    console.log('[boot] all routes loaded successfully');
+  } catch (err) {
+    console.error('[boot] ROUTE LOADING FAILED:', err);
+    // Still keep server alive for health checks — add fallback 500 handler
+    app.use((req: any, res: any) => {
+      res.status(500).json({ error: 'Server failed to load routes', detail: String(err) });
+    });
+  }
+
+  // Sync DB schema in background
   try {
     const { exec } = require('child_process');
     console.log('[boot] Running prisma db push...');
@@ -138,10 +141,15 @@ async function startServer() {
     console.warn('[boot] prisma db push skipped:', e);
   }
 
-  // Load AI model in background so the server is immediately available
-  aiService.loadModel()
-    .then(() => console.log('AI Service initialized'))
-    .catch(() => console.warn('AI Service initialization failed, using fallback mode'));
+  // Load AI model in background
+  try {
+    const { aiService } = require('./services/ai.service');
+    aiService.loadModel()
+      .then(() => console.log('[boot] AI Service initialized'))
+      .catch(() => console.warn('[boot] AI Service init failed, using fallback'));
+  } catch (e) {
+    console.warn('[boot] AI service load skipped:', e);
+  }
 }
 
 startServer().catch(console.error);

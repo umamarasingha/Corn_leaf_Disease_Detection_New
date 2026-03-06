@@ -6,8 +6,9 @@
 
 FROM node:18-slim
 
-# cache-bust: v3 – moved prisma to deps
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+# cache-bust: v4 – add openssl for prisma+postgresql
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
