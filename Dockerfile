@@ -26,12 +26,6 @@ RUN npx prisma generate
 # Compile TypeScript
 RUN npm run build
 
-# Remove dev dependencies but keep prisma CLI for runtime db push
-RUN npm prune --omit=dev && npm install prisma@5.22.0
-
-# ── Model files are read from ./models (committed in repo) ───────────────────
-# The Dockerfile COPY above already copies backend/models/*
-
 # ── Runtime configuration  ───────────────────────────────────────────────────
 ENV NODE_ENV=production
 # PORT is injected by Railway at runtime – do NOT hardcode it
