@@ -29,7 +29,8 @@
       "Bash(npm install --ignore-scripts)",
       "Bash(ls \"e:/Corn_leaf_Disease_Detection_New\"/Dockerfile*)",
       "Bash(npm ls sharp)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(ls \"e:/Corn_leaf_Disease_Detection_New\"/railway*)"
     ]
   }
 }
