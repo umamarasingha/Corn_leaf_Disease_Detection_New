@@ -33,5 +33,5 @@ ENV NODE_ENV=production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-# Start the server directly – DB schema sync handled in app startup
-CMD ["node", "dist/app.js"]
+# Diagnostic: test modules then start
+CMD ["sh", "-c", "echo PORT=$PORT && node -e \"try{require('@prisma/client');console.log('prisma:ok')}catch(e){console.error('prisma:FAIL',e.message)}\" && node -e \"try{require('./dist/app');console.log('app:loaded')}catch(e){console.error('app:FAIL',e.message)}\" && node dist/app.js"]
