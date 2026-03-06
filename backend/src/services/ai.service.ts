@@ -6,10 +6,9 @@
  *    The dedicated ML service loads the real Keras .h5 model with full
  *    TensorFlow and returns accurate predictions.  This is the primary
  *    production path on Railway where the ML service runs alongside.
- * 2. @tensorflow/tfjs-node  ->  loads a TF.js-converted model directory.
- *    Only works when model.json + real weight shards exist in models/.
- * 3. @tensorflow/tfjs (CPU)  ->  same converted model, pure JS fallback.
- * 4. Mock prediction (always available, for CI / dev without any ML setup).
+ * 2. @tensorflow/tfjs (CPU)  ->  loads a TF.js-converted model (model.json + weight shards).
+ *    Only works when real weight shards exist in models/.
+ * 3. Mock prediction (always available, for CI / dev without any ML setup).
  */
 
 import { getDiseaseInfo } from '../utils/helpers';
@@ -105,16 +104,9 @@ class AIService {
         return;
       }
 
-      // Try tfjs-node first (faster, supports GPU on Linux)
-      let tf: any;
-      try {
-        tf = require('@tensorflow/tfjs-node');
-        console.log('Using @tensorflow/tfjs-node backend');
-      } catch {
-        tf = require('@tensorflow/tfjs');
-        try { require('@tensorflow/tfjs-backend-cpu'); } catch { /* already registered */ }
-        console.log('Using @tensorflow/tfjs CPU backend');
-      }
+      // Use pure-JS TF.js (no native deps required)
+      const tf = require('@tensorflow/tfjs');
+      console.log('Using @tensorflow/tfjs CPU backend');
 
       const modelUrl = 'file://' + TFJS_MODEL_PATH;
       console.log('Loading model from', modelUrl);
@@ -157,9 +149,7 @@ class AIService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async runTfjsInference(imageBase64: string): Promise<DiseasePrediction> {
-    let tf: any;
-    try { tf = require('@tensorflow/tfjs-node'); }
-    catch { tf = require('@tensorflow/tfjs'); }
+    const tf = require('@tensorflow/tfjs');
 
     const tensor = await this.preprocessImage(imageBase64, tf);
     const predTensor = this.tfjsModel.predict(tensor);

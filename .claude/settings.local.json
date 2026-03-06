@@ -24,7 +24,12 @@
       "Bash(python -c \"import tensorflow; print\\(''tf'', tensorflow.__version__\\)\")",
       "Bash(python -c \"import tensorflowjs; print\\(''tfjs'', tensorflowjs.__version__\\)\")",
       "Bash(curl -s --max-time 5 \"https://corn-leaf-backend-production.up.railway.app/health\")",
-      "Bash(curl -s --max-time 5 \"https://corn-leaf-backend-production.up.railway.app/\")"
+      "Bash(curl -s --max-time 5 \"https://corn-leaf-backend-production.up.railway.app/\")",
+      "Bash(npm install)",
+      "Bash(npm install --ignore-scripts)",
+      "Bash(ls \"e:/Corn_leaf_Disease_Detection_New\"/Dockerfile*)",
+      "Bash(npm ls sharp)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }

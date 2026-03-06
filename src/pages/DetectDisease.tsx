@@ -1,9 +1,7 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import Webcam from 'react-webcam';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Capacitor } from '@capacitor/core';
 import apiService from '../services/api';
 import {
   Camera,
@@ -22,18 +20,15 @@ import { diseaseModel } from '../utils/aiModel';
 const DetectDisease: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const [isUsingCamera, setIsUsingCamera] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [modelStatus, setModelStatus] = useState<{ loaded: boolean; loading: boolean }>({ 
-    loaded: false, 
-    loading: true 
+  const [modelStatus, setModelStatus] = useState<{ loaded: boolean; loading: boolean }>({
+    loaded: false,
+    loading: true
   });
-  
-  const webcamRef = useRef<Webcam>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize AI model on component mount
@@ -84,9 +79,7 @@ const DetectDisease: React.FC = () => {
     },
   ];
 
-  const isNativePlatform = Capacitor.isNativePlatform();
-
-  const openNativeCamera = async () => {
+  const openCamera = async () => {
     try {
       const photo = await CapCamera.getPhoto({
         quality: 90,
@@ -98,37 +91,35 @@ const DetectDisease: React.FC = () => {
         setSelectedImage(photo.dataUrl);
       }
     } catch (error: any) {
-      if (error?.message !== 'User cancelled photos app') {
-        console.error('Native camera error:', error);
-        alert(t('Failed to open camera. Please try again.'));
+      // User cancelled — not an error
+      if (error?.message?.includes('User cancelled') || error?.message?.includes('canceled')) {
+        return;
+      }
+      console.error('Camera error:', error);
+      // Fallback: open a file input with camera capture
+      if (fileInputRef.current) {
+        fileInputRef.current.setAttribute('capture', 'environment');
+        fileInputRef.current.click();
+        fileInputRef.current.removeAttribute('capture');
       }
     }
   };
 
-  const capturePhoto = useCallback(() => {
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (imageSrc) {
-      setSelectedImage(imageSrc);
-      setShowCamera(false);
-      setIsUsingCamera(false);
-    }
-  }, [webcamRef]);
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setUploadError(null);
-    
+
     if (file) {
       // Validate file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       const fileType = file.type.toLowerCase();
-      
+
       if (!validTypes.includes(fileType)) {
         setUploadError(t('Invalid file type. Please upload only JPG or PNG images.'));
         event.target.value = ''; // Reset the input
         return;
       }
-      
+
       // Validate file size (optional: max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
@@ -136,7 +127,7 @@ const DetectDisease: React.FC = () => {
         event.target.value = '';
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
@@ -149,7 +140,7 @@ const DetectDisease: React.FC = () => {
     if (!selectedImage) return;
 
     setIsAnalyzing(true);
-    
+
     try {
       // Always analyze through backend API so detection is persisted in DB
       const response = await fetch(selectedImage);
@@ -157,7 +148,7 @@ const DetectDisease: React.FC = () => {
       const file = new File([blob], 'detection-image.jpg', { type: 'image/jpeg' });
 
       const apiResult = await apiService.analyzeImage(file);
-      
+
       setDetectionResult({
         disease: apiResult.disease,
         confidence: apiResult.confidence,
@@ -167,7 +158,7 @@ const DetectDisease: React.FC = () => {
         prevention: apiResult.prevention,
         timestamp: new Date().toISOString()
       });
-      
+
     } catch (error) {
       console.error('Analysis failed:', error);
       setDetectionResult(null);
@@ -180,8 +171,6 @@ const DetectDisease: React.FC = () => {
   const resetDetection = () => {
     setSelectedImage(null);
     setDetectionResult(null);
-    setIsUsingCamera(false);
-    setShowCamera(false);
     setUploadError(null);
   };
 
@@ -201,7 +190,7 @@ const DetectDisease: React.FC = () => {
         <p className="text-gray-600 mt-1 text-sm sm:text-base">
           {t('Upload or capture an image of corn leaf for AI-powered disease detection')}
         </p>
-        
+
         {/* AI Model Status */}
         <div className="mt-2 flex items-center space-x-2">
           {modelStatus.loading ? (
@@ -273,14 +262,7 @@ const DetectDisease: React.FC = () => {
                 {t('Use your camera to capture a leaf image')}
               </p>
               <button
-                onClick={() => {
-                  if (isNativePlatform) {
-                    openNativeCamera();
-                  } else {
-                    setIsUsingCamera(true);
-                    setShowCamera(true);
-                  }
-                }}
+                onClick={openCamera}
                 className="btn-secondary text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >
                 {t('Open Camera')}
@@ -420,46 +402,6 @@ const DetectDisease: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Camera Modal */}
-      {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{t('Capture Photo')}</h3>
-                <button
-                  onClick={() => setShowCamera(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            <div className="p-4">
-              <Webcam
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                className="w-full rounded-lg"
-              />
-              <div className="flex justify-center mt-4 space-x-3">
-                <button
-                  onClick={capturePhoto}
-                  className="btn-primary"
-                >
-                  {t('Capture Photo')}
-                </button>
-                <button
-                  onClick={() => setShowCamera(false)}
-                  className="btn-secondary"
-                >
-                  {t('Cancel')}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
