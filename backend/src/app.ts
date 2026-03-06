@@ -1,3 +1,12 @@
+// Catch fatal errors so Railway logs show what crashed
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -9,6 +18,7 @@ import { errorHandler, notFound } from './middleware/error.middleware';
 import { apiRateLimiter } from './middleware/rateLimit.middleware';
 
 dotenv.config();
+console.log('Starting app, PORT=' + (process.env.PORT || '8000'));
 
 const app: Application = express();
 const PORT = process.env.PORT || 8000;

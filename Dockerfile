@@ -34,13 +34,10 @@ RUN npm prune --omit=dev
 
 # ── Runtime configuration  ───────────────────────────────────────────────────
 ENV NODE_ENV=production
-ENV PORT=8000
-# Set DATABASE_URL via Railway environment variable
+# PORT is injected by Railway at runtime – do NOT hardcode it
 
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-EXPOSE 8000
-
-# Run migrations then start the server
-CMD ["node", "dist/app.js"]
+# Start the server with crash diagnostics
+CMD ["sh", "-c", "echo \"PORT=$PORT\" && node dist/app.js"]
