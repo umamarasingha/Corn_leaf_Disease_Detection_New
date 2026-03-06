@@ -1,3 +1,5 @@
+console.log('[boot] process starting, NODE_ENV=' + process.env.NODE_ENV + ', PORT=' + process.env.PORT);
+
 // Catch fatal errors so Railway logs show what crashed
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -18,7 +20,7 @@ import { errorHandler, notFound } from './middleware/error.middleware';
 import { apiRateLimiter } from './middleware/rateLimit.middleware';
 
 dotenv.config();
-console.log('Starting app, PORT=' + (process.env.PORT || '8000'));
+console.log('[boot] imports loaded, configuring express');
 
 const app: Application = express();
 const PORT = process.env.PORT || 8000;
@@ -111,6 +113,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 async function startServer() {
+  console.log('[boot] starting server on port', PORT);
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
