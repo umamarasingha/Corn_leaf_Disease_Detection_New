@@ -14,9 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# ── Copy backend source ──────────────────────────────────────────────────────
+# ── Install dependencies ─────────────────────────────────────────────────────
 COPY backend/package*.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force
 
 # Copy the rest of the backend
 COPY backend/ .
