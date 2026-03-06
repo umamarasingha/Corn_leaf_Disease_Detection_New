@@ -31,7 +31,8 @@
       "Bash(npm ls sharp)",
       "Bash(npx tsc --noEmit)",
       "Bash(ls \"e:/Corn_leaf_Disease_Detection_New\"/railway*)",
-      "Bash(npx prisma generate)"
+      "Bash(npx prisma generate)",
+      "Bash(npx -y tsc --noEmit --project backend/tsconfig.json)"
     ]
   }
 }
