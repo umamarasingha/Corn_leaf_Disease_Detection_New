@@ -33,7 +33,7 @@ class ChatService {
     if (GEMINI_API_KEY) {
       this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
       this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      console.log('[Chat] Gemini AI initialized');
+      console.log('[Chat] Gemini AI initialized (gemini-2.0-flash)');
     } else {
       console.warn('[Chat] GEMINI_API_KEY not set - chatbot will use fallback responses');
     }
@@ -41,10 +41,20 @@ class ChatService {
 
   async processMessage(message: string): Promise<ChatResponse> {
     if (this.model) {
-      try {
-        return await this.geminiResponse(message);
-      } catch (error) {
-        console.error('[Chat] Gemini API error:', error);
+      // Try up to 2 times with delay for rate limiting
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          return await this.geminiResponse(message);
+        } catch (error: any) {
+          const status = error?.status || error?.response?.status;
+          if (status === 429 && attempt === 0) {
+            console.warn('[Chat] Rate limited, retrying in 2s...');
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          console.error('[Chat] Gemini API error:', error?.message || error);
+          break;
+        }
       }
     }
     return this.fallbackResponse(message);
@@ -54,6 +64,7 @@ class ChatService {
     const prompt = `${SYSTEM_PROMPT}\n\nUser question: ${message}`;
     const result = await this.model.generateContent(prompt);
     const response = result.response.text();
+    console.log('[Chat] Gemini response received');
 
     return {
       message: response,
