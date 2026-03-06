@@ -36,7 +36,6 @@ const Register: React.FC = () => {
         } else if (err.response.status === 400) {
           errorMessage = err.response.data?.error || 'Please check your input and try again.';
         } else if (err.response.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
           errorMessage = t('Server error. Please try again later.');
         }
       } else if (err.request) {

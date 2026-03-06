@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import MobileBottomNav from './components/Layout/MobileBottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
-import HomePage from './pages/HomePage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -49,7 +48,7 @@ const AppContent: React.FC = () => {
   }
 
   // Role-based homepage component
-  const HomePage: React.FC = () => {
+  const RoleBasedHome: React.FC = () => {
     if (user?.role?.toUpperCase() === 'ADMIN') {
       return <AdminDashboard />;
     }
@@ -58,18 +57,18 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <Header 
-        onMenuClick={() => setSidebarOpen(true)} 
-        title={t('CornLeaf AI')} 
+      <Header
+        onMenuClick={() => setSidebarOpen(true)}
+        title={t('CornLeaf AI')}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-y-auto lg:ml-0">
           <div className="w-full p-4 sm:p-6 lg:p-8">
             <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<RoleBasedHome />} />
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
               <Route path="/forgot-password" element={<Navigate to="/" replace />} />
               <Route path="/detect" element={<DetectDisease />} />
               <Route path="/feed" element={<CommunityFeed />} />

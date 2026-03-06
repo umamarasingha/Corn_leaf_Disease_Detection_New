@@ -62,7 +62,7 @@ const MobileBottomNav: React.FC = () => {
         
         {/* Settings button for admin/users */}
         <button
-          onClick={() => navigate(user?.role === 'admin' ? '/admin/settings' : '/settings')}
+          onClick={() => navigate(user?.role?.toUpperCase() === 'ADMIN' ? '/admin/settings' : '/settings')}
           className={`
             flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all flex-1
             ${location.pathname.includes('/settings')

@@ -272,24 +272,9 @@ const CommunityFeed: React.FC = () => {
       const image = selectedImages.length > 0 ? selectedImages[0] : undefined;
       const response = await api.createPost(title, newPostContent, image);
       
-      // Handle different response formats
-      /*const newPost = response?.data || response || {
-        id: Date.now().toString(),
-        userId: user?.id || '1',
-        userName: user?.name || 'Current User',
-        userAvatar: user?.avatar || '',
-        content: newPostContent,
-        images: selectedImages.length > 0 ? [URL.createObjectURL(selectedImages[0])] : [],
-        likes: 0,
-        comments: [],
-        createdAt: new Date().toISOString(),
-        isLiked: false
-      };*/
-
       const created = response?.data || response;
 
-// Always ensure arrays and fields exist
-const newPost = {
+      const newPost = {
   id: created?.id ?? Date.now().toString(),
   userId: created?.userId ?? (user?.id || '1'),
   userName: created?.userName ?? (user?.name || 'Current User'),
@@ -588,10 +573,9 @@ const newPost = {
 
               {/* Post Content */}
               <div className="px-4 pb-3">
-                <p 
-                  className="text-gray-800 text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: renderFormattedText(post.content) }}
-                />
+                <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+                  {post.content}
+                </p>
               </div>
 
               {/* Post Images */}

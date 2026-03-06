@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install @capacitor/core @capacitor/cli @capacitor/android)",
+      "Bash(REACT_APP_API_URL=https://corn-leaf-backend-production.up.railway.app npm run build)",
+      "Bash(npx cap sync android)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(ls \"e:/Corn_leaf_Disease_Detection_New/android/\"gradlew*)",
+      "Read(//c/Users/ANiMAL/.gradle/wrapper/**)",
+      "Read(//e/Corn_leaf_Disease_Detection_New/android/$PROGRAMFILES/Android/Android Studio/**)",
+      "Read(//e/Corn_leaf_Disease_Detection_New/android/$PROGRAMFILES/**)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/gradle/gradle/v8.2.1/gradle/wrapper/gradle-wrapper.jar\" -o \"e:/Corn_leaf_Disease_Detection_New/android/gradle/wrapper/gradle-wrapper.jar\")",
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java.exe\" -version)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ANDROID_SDK_ROOT=\"$LOCALAPPDATA/Android/Sdk\" bash gradlew assembleDebug)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" ANDROID_SDK_ROOT=\"$LOCALAPPDATA/Android/Sdk\" cmd.exe //c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& set ANDROID_SDK_ROOT=%LOCALAPPDATA%\\\\Android\\\\Sdk&& gradlew.bat assembleDebug\")",
+      "Bash(cmd.exe //c \"cd /d E:\\\\Corn_leaf_Disease_Detection_New\\\\android && set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat assembleDebug\")",
+      "Bash(cmd.exe //c \"cd /d E:\\\\Corn_leaf_Disease_Detection_New\\\\android && set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& .\\\\gradlew.bat assembleDebug\")",
+      "Bash(echo \"sdk.dir=$LOCALAPPDATA/Android/Sdk\")",
+      "Bash(echo $LOCALAPPDATA)"
+    ]
+  }
+}

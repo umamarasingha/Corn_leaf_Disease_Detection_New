@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://corn-leaf-backend-production.up.railway.app';
 
 // Create base axios instance
 const axiosInstance = axios.create({
@@ -118,7 +118,19 @@ const api = new Proxy(axiosInstance, {
           });
           return response.data;
         };
-        
+
+      case 'deleteAccount':
+        return async () => {
+          const response = await axiosInstance.delete('/api/user/account');
+          return response.data;
+        };
+
+      case 'getNews':
+        return async () => {
+          const response = await axiosInstance.get('/api/news');
+          return response.data;
+        };
+
       default:
         return undefined;
     }

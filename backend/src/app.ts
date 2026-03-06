@@ -23,11 +23,29 @@ console.log('Starting app, PORT=' + (process.env.PORT || '8000'));
 const app: Application = express();
 const PORT = process.env.PORT || 8000;
 
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(s => s.trim());
+
+// Capacitor WebView uses https://localhost or capacitor://localhost
+const allowedOrigins = [
+  ...corsOrigins,
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost',
+];
 
 app.use(helmet());
 app.use(cors({
-  origin: corsOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('CORS blocked origin:', origin);
+      callback(null, true);
+    }
+  },
   credentials: true,
 }));
 app.use(morgan('combined'));
@@ -55,6 +73,7 @@ import detectionRoutes from './routes/detection.routes';
 import communityRoutes from './routes/community.routes';
 import adminRoutes from './routes/admin.routes';
 import chatRoutes from './routes/chat.routes';
+import newsRoutes from './routes/news.routes';
 import { updateProfile, changePassword } from './controllers/auth.controller';
 import { authenticateToken } from './middleware/auth.middleware';
 import { changePasswordValidation } from './utils/validators';
@@ -65,11 +84,28 @@ app.use('/api/detection', detectionRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/news', newsRoutes);
 
 // User routes to match frontend API calls
 import { uploadSingle } from './config/multer';
 app.put('/api/user/profile', authenticateToken, uploadSingle, updateProfile);
 app.put('/api/user/change-password', authenticateToken, changePasswordValidation, validateRequest, changePassword);
+app.delete('/api/user/account', authenticateToken, async (req: any, res: any) => {
+  try {
+    const userId = req.user!.userId;
+    const prisma = (await import('./config/database')).default;
+    await prisma.detection.deleteMany({ where: { userId } });
+    await prisma.comment.deleteMany({ where: { userId } });
+    await prisma.like.deleteMany({ where: { userId } });
+    await prisma.post.deleteMany({ where: { userId } });
+    await prisma.roleHistory.deleteMany({ where: { userId } });
+    await prisma.user.delete({ where: { id: userId } });
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
 
 app.use(notFound);
 app.use(errorHandler);
