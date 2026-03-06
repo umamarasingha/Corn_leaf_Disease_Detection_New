@@ -47,7 +47,17 @@ model = None
 def load_model():
     global model
     try:
+        log.info("Importing TensorFlow …")
         import tensorflow as tf  # noqa: F401
+        log.info("TensorFlow %s imported successfully", tf.__version__)
+
+        if not os.path.isfile(MODEL_PATH):
+            log.error("❌ Model file not found at %s", MODEL_PATH)
+            model = None
+            return
+
+        log.info("Loading model from %s (%.1f MB) …", MODEL_PATH,
+                 os.path.getsize(MODEL_PATH) / 1e6)
         model = tf.keras.models.load_model(MODEL_PATH)
         log.info("✅ Model loaded from %s", MODEL_PATH)
         log.info("   Input shape : %s", model.input_shape)
@@ -161,6 +171,11 @@ class Handler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import threading
+
+    # Limit TensorFlow memory usage for Railway free tier
+    os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")  # suppress TF info logs
+    os.environ.setdefault("TF_FORCE_GPU_ALLOW_GROWTH", "true")
+
     # Railway injects PORT; fall back to ML_SERVICE_PORT or 5001
     port = int(os.environ.get("PORT", os.environ.get("ML_SERVICE_PORT", 5001)))
 

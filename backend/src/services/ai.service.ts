@@ -31,7 +31,9 @@ const DISEASE_CLASSES = ['Blight', 'Common Rust', 'Gray Leaf Spot', 'Healthy'];
 
 const MODEL_DIR = path.join(__dirname, '../../models');
 const TFJS_MODEL_PATH = path.join(MODEL_DIR, 'model.json');
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+// Normalize: ensure the URL has a protocol prefix
+const rawMlUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+const ML_SERVICE_URL = rawMlUrl.startsWith('http') ? rawMlUrl : `http://${rawMlUrl}`;
 
 class AIService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
