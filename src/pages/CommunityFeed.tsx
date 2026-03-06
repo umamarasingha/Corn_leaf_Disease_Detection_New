@@ -365,7 +365,7 @@ const CommunityFeed: React.FC = () => {
   return (
     <div className="w-full space-y-3 sm:space-y-4">
       {/* Search and Filter Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
         <div className="flex flex-col gap-3">
           {/* Search Bar */}
           <div className="relative">
@@ -375,7 +375,7 @@ const CommunityFeed: React.FC = () => {
               placeholder={t('Search posts or users...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />
           </div>
           
@@ -414,7 +414,7 @@ const CommunityFeed: React.FC = () => {
       </div>
 
       {/* Create Post Section - Facebook Style */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex space-x-3">
           <div className="flex-shrink-0">
             <div className="h-10 w-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
@@ -424,7 +424,7 @@ const CommunityFeed: React.FC = () => {
           <div className="flex-1">
             {!isPostInputActive ? (
               <div 
-                className="bg-gray-100 rounded-full px-4 py-2.5 cursor-pointer hover:bg-gray-200 transition-colors"
+                className="bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2.5 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 onClick={() => setIsPostInputActive(true)}
               >
                 <span className="text-gray-600 text-sm">{t("What's on your mind about your crops?")}</span>
@@ -545,7 +545,7 @@ const CommunityFeed: React.FC = () => {
       <div className="space-y-4">
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post: Post) => (
-            <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div key={post.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               {/* Post Header */}
               <div className="p-4 pb-3">
                 <div className="flex items-center justify-between">
@@ -554,7 +554,7 @@ const CommunityFeed: React.FC = () => {
                       <User className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 text-sm">{post.userName}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{post.userName}</h3>
                       <div className="flex items-center space-x-2 text-xs text-gray-500">
                         <span>{formatTime(post.createdAt)}</span>
                         <span>•</span>
@@ -573,7 +573,7 @@ const CommunityFeed: React.FC = () => {
 
               {/* Post Content */}
               <div className="px-4 pb-3">
-                <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
                   {post.content}
                 </p>
               </div>
@@ -601,7 +601,7 @@ const CommunityFeed: React.FC = () => {
               )}
 
               {/* Post Actions */}
-              <div className="px-4 py-2 border-t border-gray-100">
+              <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-1">
                     <button 
@@ -632,14 +632,14 @@ const CommunityFeed: React.FC = () => {
 
               {/* Comments Section */}
               {post.comments.length > 0 && (
-                <div className="px-4 py-3 border-t border-gray-100">
+                <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="space-y-3">
                     {post.comments.slice(0, 2).map((comment: Comment) => (
                       <div key={comment.id} className="flex space-x-2">
                         <div className="h-8 w-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                           <User className="h-4 w-4 text-white" />
                         </div>
-                        <div className="bg-gray-100 rounded-lg px-3 py-2 flex-1">
+                        <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2 flex-1">
                           <p className="font-medium text-sm text-gray-900">{comment.userName}</p>
                           <p className="text-sm text-gray-700">{comment.content}</p>
                           <p className="text-xs text-gray-500 mt-1">{comment.createdAt}</p>
@@ -656,12 +656,12 @@ const CommunityFeed: React.FC = () => {
               )}
 
               {/* Add Comment */}
-              <div className="px-4 py-3 border-t border-gray-100">
+              <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex space-x-2">
                   <div className="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <User className="h-4 w-4 text-white" />
                   </div>
-                  <div className="flex-1 flex items-center bg-gray-100 rounded-full px-3 py-1.5">
+                  <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1.5">
                     <input
                       type="text"
                       value={commentInputs[post.id] || ''}
@@ -669,7 +669,7 @@ const CommunityFeed: React.FC = () => {
                         setCommentInputs({ ...commentInputs, [post.id]: e.target.value })
                       }
                       placeholder={t('Write a comment...')}
-                      className="flex-1 bg-transparent text-sm outline-none"
+                      className="flex-1 bg-transparent text-sm outline-none dark:text-gray-100 dark:placeholder-gray-400"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           handleComment(post.id);

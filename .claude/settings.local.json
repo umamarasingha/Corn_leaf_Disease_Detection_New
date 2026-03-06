@@ -32,7 +32,13 @@
       "Bash(npx tsc --noEmit)",
       "Bash(ls \"e:/Corn_leaf_Disease_Detection_New\"/railway*)",
       "Bash(npx prisma generate)",
-      "Bash(npx -y tsc --noEmit --project backend/tsconfig.json)"
+      "Bash(npx -y tsc --noEmit --project backend/tsconfig.json)",
+      "Bash(npm run build)",
+      "Bash(ls \"e:/Corn_leaf_Disease_Detection_New/backend/.env\"*)",
+      "Bash(ls \"e:/Corn_leaf_Disease_Detection_New/.env\"*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://corn-leaf-backend-production.up.railway.app/api/auth/me\")",
+      "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/\")",
+      "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/health\")"
     ]
   }
 }

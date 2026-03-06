@@ -63,8 +63,8 @@ const AppContent: React.FC = () => {
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 overflow-y-auto lg:ml-0">
-          <div className="w-full p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             <Routes>
               <Route path="/" element={<RoleBasedHome />} />
               <Route path="/login" element={<Navigate to="/" replace />} />

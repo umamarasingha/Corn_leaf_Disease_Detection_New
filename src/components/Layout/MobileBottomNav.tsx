@@ -34,7 +34,7 @@ const MobileBottomNav: React.FC = () => {
   };
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
       <div className="flex justify-around items-center px-2 py-2">
         {menuItems.map((item) => {
           const Icon = item.icon;

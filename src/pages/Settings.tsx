@@ -218,8 +218,8 @@ const Settings: React.FC = () => {
 
   const renderProfileSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Profile Information</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Profile Information</h3>
         
         <div className="flex items-center space-x-6 mb-6">
           <div className="relative">
@@ -243,8 +243,8 @@ const Settings: React.FC = () => {
           <div>
             <h4 className="text-lg font-medium text-gray-800">{settings.profile.name}</h4>
             <p className="text-sm text-gray-600">{settings.profile.email}</p>
-            <p className="text-xs text-gray-500 mt-1">Member since {new Date(user?.createdAt || '').toLocaleDateString()}</p>
-            <p className="text-xs text-gray-500 mt-1">Avatar: JPG or PNG (Max 5MB)</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Member since {new Date(user?.createdAt || '').toLocaleDateString()}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Avatar: JPG or PNG (Max 5MB)</p>
           </div>
         </div>
         
@@ -259,58 +259,58 @@ const Settings: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Full Name
             </label>
             <input
               type="text"
               value={settings.profile.name}
               onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, name: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email Address
             </label>
             <input
               type="email"
               value={settings.profile.email}
               onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, email: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled
             />
-            <p className="text-xs text-gray-500 mt-1">Contact admin to change email</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Contact admin to change email</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Phone Number
             </label>
             <input
               type="tel"
               value={settings.profile.phone}
               onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, phone: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Location
             </label>
             <input
               type="text"
               value={settings.profile.location}
               onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, location: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
 
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Bio
           </label>
           <textarea
@@ -318,17 +318,17 @@ const Settings: React.FC = () => {
             onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, bio: e.target.value } })}
             rows={3}
             placeholder="Tell us about yourself..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Change Password</h3>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Current Password
             </label>
             <div className="relative">
@@ -336,7 +336,7 @@ const Settings: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <button
                 type="button"
@@ -349,26 +349,26 @@ const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               New Password
             </label>
             <input
               type="password"
               value={passwordForm.newPassword}
               onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Confirm New Password
             </label>
             <input
               type="password"
               value={passwordForm.confirmPassword}
               onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -383,7 +383,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-white rounded-lg border-2 border-red-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-red-200 dark:border-red-800 p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
         <p className="text-sm text-gray-600 mb-4">
           Once you delete your account, there is no going back. Please be certain.
@@ -401,16 +401,16 @@ const Settings: React.FC = () => {
 
   const renderNotificationSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Notification Preferences</h3>
         
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Mail className="h-5 w-5 text-gray-400" />
               <div>
-                <h4 className="text-sm font-medium text-gray-800">Email Notifications</h4>
-                <p className="text-xs text-gray-500">Receive updates via email</p>
+                <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">Email Notifications</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Receive updates via email</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -428,8 +428,8 @@ const Settings: React.FC = () => {
             <div className="flex items-center space-x-3">
               <Smartphone className="h-5 w-5 text-gray-400" />
               <div>
-                <h4 className="text-sm font-medium text-gray-800">Push Notifications</h4>
-                <p className="text-xs text-gray-500">Receive push notifications on mobile</p>
+                <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">Push Notifications</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Receive push notifications on mobile</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -447,8 +447,8 @@ const Settings: React.FC = () => {
             <div className="flex items-center space-x-3">
               <AlertTriangle className="h-5 w-5 text-gray-400" />
               <div>
-                <h4 className="text-sm font-medium text-gray-800">Disease Alerts</h4>
-                <p className="text-xs text-gray-500">Get notified about disease outbreaks</p>
+                <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">Disease Alerts</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Get notified about disease outbreaks</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -466,8 +466,8 @@ const Settings: React.FC = () => {
             <div className="flex items-center space-x-3">
               <Users className="h-5 w-5 text-gray-400" />
               <div>
-                <h4 className="text-sm font-medium text-gray-800">Community Updates</h4>
-                <p className="text-xs text-gray-500">Updates from community feed</p>
+                <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">Community Updates</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Updates from community feed</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -487,23 +487,23 @@ const Settings: React.FC = () => {
 
   const renderPrivacySettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Settings</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Privacy Settings</h3>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Profile Visibility
             </label>
             <select
               value={settings.privacy.profileVisibility}
               onChange={(e) => setSettings({ ...settings, privacy: { ...settings.privacy, profileVisibility: e.target.value as 'public' | 'private' } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {settings.privacy.profileVisibility === 'public' 
                 ? 'Anyone can view your profile' 
                 : 'Only you can view your profile'}
@@ -553,8 +553,8 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Data Management</h3>
         
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -586,18 +586,18 @@ const Settings: React.FC = () => {
 
   const renderPreferencesSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Application Preferences</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Application Preferences</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Language
             </label>
             <select
               value={settings.preferences.language}
               onChange={(e) => setSettings({ ...settings, preferences: { ...settings.preferences, language: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="en">English</option>
               <option value="es">Spanish</option>
@@ -608,13 +608,13 @@ const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Theme
             </label>
             <select
               value={settings.preferences.theme}
               onChange={(e) => setSettings({ ...settings, preferences: { ...settings.preferences, theme: e.target.value as 'light' | 'dark' | 'system' } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -623,13 +623,13 @@ const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Timezone
             </label>
             <select
               value={settings.preferences.timezone}
               onChange={(e) => setSettings({ ...settings, preferences: { ...settings.preferences, timezone: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="UTC">UTC</option>
               <option value="EST">Eastern Time</option>
@@ -640,13 +640,13 @@ const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Date Format
             </label>
             <select
               value={settings.preferences.dateFormat}
               onChange={(e) => setSettings({ ...settings, preferences: { ...settings.preferences, dateFormat: e.target.value } })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="MM/DD/YYYY">MM/DD/YYYY</option>
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -661,8 +661,8 @@ const Settings: React.FC = () => {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-        <p className="text-gray-600">Manage your account settings and preferences</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage your account settings and preferences</p>
       </div>
 
       {/* Status Alert */}
@@ -682,8 +682,8 @@ const Settings: React.FC = () => {
       )}
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-6">
-        <div className="flex flex-wrap border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -727,7 +727,7 @@ const Settings: React.FC = () => {
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-red-100 rounded-full">

@@ -99,10 +99,10 @@ const Notifications: React.FC = () => {
 
       {/* Notifications Dropdown */}
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          <div className="p-4 border-b border-gray-200">
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">{t('Notifications')}</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-100">{t('Notifications')}</h3>
               <div className="flex items-center space-x-2">
                 {unreadCount > 0 && (
                   <button

@@ -150,15 +150,15 @@ const Chatbot: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-8rem)] flex flex-col">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">AI Assistant</h1>
-        <p className="text-gray-600 mt-1">
+    <div className="w-full h-[calc(100vh-12rem)] lg:h-[calc(100vh-8rem)] flex flex-col">
+      <div className="text-center mb-3 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">AI Assistant</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
           Get instant help with corn disease detection and treatment
         </p>
       </div>
 
-      <div className="flex-1 card p-6 flex flex-col">
+      <div className="flex-1 card dark:bg-gray-800 dark:border-gray-700 p-3 sm:p-6 flex flex-col">
         {/* Quick Actions */}
         <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
           {quickActions.map((action) => {
@@ -167,7 +167,7 @@ const Chatbot: React.FC = () => {
               <button
                 key={action.action}
                 onClick={() => handleQuickAction(action.action)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors whitespace-nowrap"
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors whitespace-nowrap"
               >
                 <Icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{action.label}</span>
@@ -201,7 +201,7 @@ const Chatbot: React.FC = () => {
                 <div className={`rounded-lg px-4 py-2 ${
                   message.type === 'user'
                     ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 text-gray-800'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                 }`}>
                   <p className="text-sm">{message.content}</p>
                   <span className={`text-xs mt-1 block ${
@@ -250,7 +250,7 @@ const Chatbot: React.FC = () => {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
           <div className="flex space-x-3">
             <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
               <Paperclip className="h-5 w-5" />
@@ -263,7 +263,7 @@ const Chatbot: React.FC = () => {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me anything about corn diseases..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 rows={1}
               />
             </div>

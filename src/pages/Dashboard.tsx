@@ -236,11 +236,11 @@ const Dashboard: React.FC = () => {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-600 truncate">{stat.title}</p>
-                  <p className="text-lg sm:text-xl font-bold text-gray-800 mt-1 truncate">{stat.value}</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">{stat.title}</p>
+                  <p className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 mt-1 truncate">{stat.value}</p>
                   <div className="flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 text-green-500 mr-1 flex-shrink-0" />
                     <span className="text-xs text-green-600 truncate">{stat.change}</span>
@@ -257,8 +257,8 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 p-3 sm:p-4">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('Recent Activity')}</h2>
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('Recent Activity')}</h2>
           <div className="space-y-2 sm:space-y-3">
             {recentActivity.map((activity) => (
               <div key={activity.id} className="flex items-center space-x-2 sm:space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
@@ -272,10 +272,10 @@ const Dashboard: React.FC = () => {
                   }`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
                     <span className="font-semibold">{activity.user}</span> {activity.action}
                   </p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
                 </div>
               </div>
             ))}
@@ -283,13 +283,13 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Disease Distribution */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-3 sm:p-4">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('Disease Distribution')}</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('Disease Distribution')}</h2>
           <div className="space-y-2 sm:space-y-3">
             {diseaseDistribution.map((disease, index) => (
               <div key={index}>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">{disease.name}</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{disease.name}</span>
                   <span className="text-xs sm:text-sm text-gray-500 ml-2">{disease.count} {t('cases')}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
@@ -305,32 +305,32 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-3 sm:p-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('Quick Actions')}</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('Quick Actions')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           <button 
             onClick={() => navigate('/detect')}
-            className="p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
           >
             <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
-            <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('New Detection')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('Upload or capture an image')}</p>
+            <h3 className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-green-600 text-sm">{t('New Detection')}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{t('Upload or capture an image')}</p>
           </button>
           <button 
             onClick={() => navigate('/feed')}
-            className="p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
           >
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
-            <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('Community Feed')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('See what others are sharing')}</p>
+            <h3 className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-green-600 text-sm">{t('Community Feed')}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{t('See what others are sharing')}</p>
           </button>
           <button 
             onClick={() => navigate('/chatbot')}
-            className="p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group"
+            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
           >
             <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mb-1 sm:mb-2" />
-            <h3 className="font-medium text-gray-800 group-hover:text-green-600 text-sm">{t('AI Assistant')}</h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t('Get help from AI chatbot')}</p>
+            <h3 className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-green-600 text-sm">{t('AI Assistant')}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{t('Get help from AI chatbot')}</p>
           </button>
         </div>
       </div>

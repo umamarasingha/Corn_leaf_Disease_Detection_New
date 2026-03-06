@@ -25,15 +25,17 @@ const rawMlUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
 const ML_SERVICE_URL = rawMlUrl.startsWith('http') ? rawMlUrl : `http://${rawMlUrl}`;
 
 class AIService {
-  private isPythonServiceAvailable = false;
+  public isPythonServiceAvailable = false;
   private lastPythonCheck = 0;
 
   async loadModel(): Promise<void> {
+    console.log('[AI] ML_SERVICE_URL env =', process.env.ML_SERVICE_URL || '(not set)');
+    console.log('[AI] Resolved ML URL =', ML_SERVICE_URL);
     await this.checkPythonService();
     if (this.isPythonServiceAvailable) {
-      console.log('ML service detected at', ML_SERVICE_URL);
+      console.log('[AI] ML service connected at', ML_SERVICE_URL);
     } else {
-      console.warn('ML service not available - will use mock predictions. Set ML_SERVICE_URL.');
+      console.warn('[AI] ML service NOT available at', ML_SERVICE_URL, '- using mock predictions');
     }
   }
 

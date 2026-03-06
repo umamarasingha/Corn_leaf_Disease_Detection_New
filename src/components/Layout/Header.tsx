@@ -66,18 +66,18 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, title }) => {
               <span className="text-xs sm:text-sm font-medium hidden sm:block">{user?.name}</span>
             </button>
             
-            <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <div className="py-2">
-                <button 
+                <button
                   onClick={() => navigate(user?.role?.toUpperCase() === 'ADMIN' ? '/admin/settings' : '/settings')}
-                  className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 flex items-center space-x-2"
+                  className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 text-gray-700 dark:text-gray-200"
                 >
                   <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>{t('Settings')}</span>
                 </button>
                 <button
                   onClick={logout}
-                  className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 flex items-center space-x-2 text-red-600"
+                  className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 text-red-600"
                 >
                   <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>{t('Logout')}</span>

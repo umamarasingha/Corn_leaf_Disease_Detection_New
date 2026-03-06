@@ -57,8 +57,16 @@ app.use(apiRateLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get('/health', async (req, res) => {
+  const mlUrl = process.env.ML_SERVICE_URL || 'not set';
+  let mlStatus = 'unknown';
+  try {
+    const { isPythonAvailable } = await import('./services/ai.service').then(m => ({
+      isPythonAvailable: (m.aiService as any).isPythonServiceAvailable
+    }));
+    mlStatus = isPythonAvailable ? 'connected' : 'disconnected';
+  } catch { mlStatus = 'error'; }
+  res.json({ status: 'ok', ml_service_url: mlUrl, ml_status: mlStatus });
 });
 
 app.get('/', (req, res) => {

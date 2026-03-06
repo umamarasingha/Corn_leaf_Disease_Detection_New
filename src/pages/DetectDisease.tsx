@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Camera as CapCamera, CameraResultType, CameraSource, CameraDirection } from '@capacitor/camera';
 import apiService from '../services/api';
 import {
   Camera,
@@ -10,43 +9,18 @@ import {
   CheckCircle,
   AlertTriangle,
   Info,
-  RefreshCw,
-  Brain,
-  Cpu
+  RefreshCw
 } from 'lucide-react';
 import { DetectionResult } from '../types';
-import { diseaseModel } from '../utils/aiModel';
 
 const DetectDisease: React.FC = () => {
-  const { user } = useAuth();
   const { t } = useLanguage();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [modelStatus, setModelStatus] = useState<{ loaded: boolean; loading: boolean }>({
-    loaded: false,
-    loading: true
-  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Initialize AI model on component mount
-  useEffect(() => {
-    const initializeModel = async () => {
-      try {
-        setModelStatus({ loaded: false, loading: true });
-        await diseaseModel.loadModel();
-        setModelStatus({ loaded: true, loading: false });
-        console.log('AI model loaded successfully');
-      } catch (error) {
-        console.error('Failed to load AI model:', error);
-        setModelStatus({ loaded: false, loading: false });
-      }
-    };
-
-    initializeModel();
-  }, []);
 
   const diseases = [
     {
@@ -84,11 +58,21 @@ const DetectDisease: React.FC = () => {
       const photo = await CapCamera.getPhoto({
         quality: 90,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl,
+        resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
+        direction: CameraDirection.Rear,
+        saveToGallery: false,
       });
-      if (photo.dataUrl) {
-        setSelectedImage(photo.dataUrl);
+
+      // Convert URI to data URL for display
+      if (photo.webPath) {
+        const response = await fetch(photo.webPath);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = () => {
+          setSelectedImage(reader.result as string);
+        };
+        reader.readAsDataURL(blob);
       }
     } catch (error: any) {
       // User cancelled — not an error
@@ -96,12 +80,7 @@ const DetectDisease: React.FC = () => {
         return;
       }
       console.error('Camera error:', error);
-      // Fallback: open a file input with camera capture
-      if (fileInputRef.current) {
-        fileInputRef.current.setAttribute('capture', 'environment');
-        fileInputRef.current.click();
-        fileInputRef.current.removeAttribute('capture');
-      }
+      alert('Camera error: ' + (error?.message || error));
     }
   };
 
@@ -186,30 +165,11 @@ const DetectDisease: React.FC = () => {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">{t('Disease Detection')}</h1>
-        <p className="text-gray-600 mt-1 text-sm sm:text-base">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">{t('Disease Detection')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
           {t('Upload or capture an image of corn leaf for AI-powered disease detection')}
         </p>
 
-        {/* AI Model Status */}
-        <div className="mt-2 flex items-center space-x-2">
-          {modelStatus.loading ? (
-            <div className="flex items-center space-x-2 text-yellow-600">
-              <Brain className="h-4 w-4 animate-pulse" />
-              <span className="text-xs sm:text-sm">{t('Loading AI model...')}</span>
-            </div>
-          ) : modelStatus.loaded ? (
-            <div className="flex items-center space-x-2 text-green-600">
-              <Cpu className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t('AI Ready')}</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 text-gray-500">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t('Using API fallback')}</span>
-            </div>
-          )}
-        </div>
       </div>
 
       {!selectedImage ? (
@@ -220,7 +180,7 @@ const DetectDisease: React.FC = () => {
               <div className="h-16 w-16 sm:h-20 sm:w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Upload className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{t('Upload Image')}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('Upload Image')}</h3>
               <p className="text-gray-600 text-sm sm:text-base mb-2">
                 {t('Choose an image from your device')}
               </p>
@@ -257,7 +217,7 @@ const DetectDisease: React.FC = () => {
               <div className="h-16 w-16 sm:h-20 sm:w-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Camera className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{t('Take Photo')}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">{t('Take Photo')}</h3>
               <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
                 {t('Use your camera to capture a leaf image')}
               </p>
@@ -325,7 +285,7 @@ const DetectDisease: React.FC = () => {
           {detectionResult && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800">{t('Detection Results')}</h3>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{t('Detection Results')}</h3>
                 <div className="flex items-center space-x-2">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(detectionResult.severity)}`}>
                     {t(detectionResult.severity).toUpperCase()} {t('Severity').toUpperCase()}
@@ -370,8 +330,8 @@ const DetectDisease: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-800 mb-3">{t('Confidence Breakdown')}</h5>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h5 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('Confidence Breakdown')}</h5>
                     <div className="space-y-3">
                       {diseases.map((disease) => (
                         <div key={disease.name} className="flex items-center justify-between">
