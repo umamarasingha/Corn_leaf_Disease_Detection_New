@@ -1,16 +1,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Corn Leaf Disease Detector – Backend Docker Image
 # Designed for Railway deployment.
+# ML inference is handled by the separate corn-leaf-ml Python service.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Use Node 18 LTS – @tensorflow/tfjs-node prebuilt binaries are available.
 FROM node:18-slim
 
-# Install system deps needed by tfjs-node and sharp
+# Minimal runtime deps (no libvips/build-essential – no native TF binding)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip python-is-python3 \
-        build-essential \
-        libvips-dev \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,9 +16,6 @@ WORKDIR /app
 # ── Copy backend source ──────────────────────────────────────────────────────
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
-
-# Install @tensorflow/tfjs-node (prebuilt for Linux amd64 on Node 18)
-RUN npm install @tensorflow/tfjs-node sharp
 
 # Copy the rest of the backend
 COPY backend/ .
