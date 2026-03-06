@@ -39,7 +39,10 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://corn-leaf-backend-production.up.railway.app/api/auth/me\")",
       "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/\")",
       "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/health\")",
-      "Bash(npm install --package-lock-only)"
+      "Bash(npm install --package-lock-only)",
+      "Bash(npx railway whoami)",
+      "Bash(npx @railway/cli --version)",
+      "Bash(npx @railway/cli whoami)"
     ]
   }
 }

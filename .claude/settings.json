@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx @railway/cli link --project e0f3789a-e168-410f-a900-dcd3190c9d11 --environment production --service c22d0a10-ec84-48f4-b33f-54fbe2f367ca)",
+      "Bash(npx @railway/cli variables)",
+      "Bash(npx @railway/cli logs --json)",
+      "Bash(npx @railway/cli redeploy --yes)",
+      "Bash(npx @railway/cli logs)",
+      "Bash(npx @railway/cli up --detach)",
+      "Bash(npx @railway/cli run -- printenv)",
+      "Bash(npx @railway/cli service info)",
+      "Bash(npx @railway/cli help)",
+      "Bash(npx @railway/cli service)",
+      "Bash(npx @railway/cli deployment list)",
+      "Bash(npx @railway/cli logs --build)",
+      "Bash(npx @railway/cli logs --deployment cabbb91f-f7f8-458f-945b-e41c61d84417)",
+      "Bash(npx @railway/cli variables set \"RAILWAY_START_COMMAND=node dist/app.js\")",
+      "Bash(npx @railway/cli service --help)",
+      "Bash(npx @railway/cli variables delete RAILWAY_START_COMMAND)"
+    ]
+  }
+}
