@@ -39,5 +39,5 @@ ENV NODE_ENV=production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-# Start the server with crash diagnostics
-CMD ["sh", "-c", "echo \"PORT=$PORT\" && node dist/app.js"]
+# Sync DB schema then start the server
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/app.js"]

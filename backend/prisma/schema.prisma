@@ -3,11 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
-  // On Railway: set DATABASE_URL=file:/app/data/prod.db
-  //             and mount a volume at /app/data so DB persists across deploys.
-  // Local dev:  DATABASE_URL=file:./prisma/dev.db   (default)
 }
 
 model User {
