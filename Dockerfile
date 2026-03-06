@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 WORKDIR /app
 
-# ── Install dependencies ─────────────────────────────────────────────────────
+# ── Install ALL dependencies (including dev for build step) ──────────────────
 COPY backend/package*.json ./
+ENV NODE_ENV=development
 RUN npm ci && npm cache clean --force
 
 # Copy the rest of the backend
@@ -24,8 +25,11 @@ RUN npx prisma generate
 # Compile TypeScript
 RUN npm run build
 
-# ── Runtime configuration  ───────────────────────────────────────────────────
+# Switch to production for runtime
 ENV NODE_ENV=production
+
+# Remove dev dependencies to slim the image
+RUN npm prune --production
 # PORT is injected by Railway at runtime – do NOT hardcode it
 
 # Create uploads directory (Railway will mount a volume here if configured)
