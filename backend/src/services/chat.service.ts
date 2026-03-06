@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 export interface ChatResponse {
   message: string;
@@ -6,7 +6,7 @@ export interface ChatResponse {
   suggestions?: string[];
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 const SYSTEM_PROMPT = `You are an expert agricultural assistant specialized in corn (maize) leaf diseases.
 Your role is to help farmers identify, prevent, and treat corn leaf diseases.
@@ -26,33 +26,30 @@ Guidelines:
 - Keep responses under 200 words unless detailed explanation is needed`;
 
 class ChatService {
-  private genAI: GoogleGenerativeAI | null = null;
-  private model: any = null;
+  private groq: Groq | null = null;
 
   constructor() {
-    if (GEMINI_API_KEY) {
-      this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      console.log('[Chat] Gemini AI initialized (gemini-2.0-flash)');
+    if (GROQ_API_KEY) {
+      this.groq = new Groq({ apiKey: GROQ_API_KEY });
+      console.log('[Chat] Groq AI initialized (llama-3.3-70b-versatile)');
     } else {
-      console.warn('[Chat] GEMINI_API_KEY not set - chatbot will use fallback responses');
+      console.warn('[Chat] GROQ_API_KEY not set - chatbot will use fallback responses');
     }
   }
 
   async processMessage(message: string): Promise<ChatResponse> {
-    if (this.model) {
-      // Try up to 2 times with delay for rate limiting
+    if (this.groq) {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          return await this.geminiResponse(message);
+          return await this.groqResponse(message);
         } catch (error: any) {
-          const status = error?.status || error?.response?.status;
+          const status = error?.status || error?.statusCode;
           if (status === 429 && attempt === 0) {
             console.warn('[Chat] Rate limited, retrying in 2s...');
             await new Promise(r => setTimeout(r, 2000));
             continue;
           }
-          console.error('[Chat] Gemini API error:', error?.message || error);
+          console.error('[Chat] Groq API error:', error?.message || error);
           break;
         }
       }
@@ -60,11 +57,19 @@ class ChatService {
     return this.fallbackResponse(message);
   }
 
-  private async geminiResponse(message: string): Promise<ChatResponse> {
-    const prompt = `${SYSTEM_PROMPT}\n\nUser question: ${message}`;
-    const result = await this.model.generateContent(prompt);
-    const response = result.response.text();
-    console.log('[Chat] Gemini response received');
+  private async groqResponse(message: string): Promise<ChatResponse> {
+    const completion = await this.groq!.chat.completions.create({
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: message },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    console.log('[Chat] Groq response received');
 
     return {
       message: response,
