@@ -80,17 +80,12 @@ async function startServer() {
   });
 
   // Sync DB schema in background (creates tables if they don't exist)
-  import('child_process').then(({ execSync }) => {
-    try {
-      console.log('Running prisma db push...');
-      execSync('npx prisma db push --skip-generate --accept-data-loss', {
-        stdio: 'inherit',
-        timeout: 30000,
-      });
-      console.log('DB schema synced');
-    } catch (e) {
-      console.warn('prisma db push failed:', e);
-    }
+  import('child_process').then(({ exec }) => {
+    console.log('Running prisma db push...');
+    exec('npx prisma db push --skip-generate --accept-data-loss', { timeout: 30000 }, (err, stdout, stderr) => {
+      if (err) console.warn('prisma db push failed:', stderr || err.message);
+      else console.log('DB schema synced:', stdout);
+    });
   });
 
   // Load AI model in background so the server is immediately available
