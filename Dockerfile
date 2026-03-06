@@ -39,5 +39,5 @@ ENV NODE_ENV=production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-# Sync DB schema then start the server (use ; so node starts even if push fails)
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss 2>&1 || echo 'prisma db push failed'; node dist/app.js"]
+# Start the server directly – DB schema sync handled in app startup
+CMD ["node", "dist/app.js"]

@@ -77,7 +77,20 @@ app.use(errorHandler);
 async function startServer() {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-    console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
+  });
+
+  // Sync DB schema in background (creates tables if they don't exist)
+  import('child_process').then(({ execSync }) => {
+    try {
+      console.log('Running prisma db push...');
+      execSync('npx prisma db push --skip-generate --accept-data-loss', {
+        stdio: 'inherit',
+        timeout: 30000,
+      });
+      console.log('DB schema synced');
+    } catch (e) {
+      console.warn('prisma db push failed:', e);
+    }
   });
 
   // Load AI model in background so the server is immediately available
