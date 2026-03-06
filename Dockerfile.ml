@@ -19,8 +19,10 @@ RUN pip install --no-cache-dir \
         pillow \
         numpy
 
-# Copy model files
+# Copy model files (H5 + Keras 3 native format)
 COPY backend/models/corn_leaf_model.h5 ./models/corn_leaf_model.h5
+COPY backend/models/config.json ./models/config.json
+COPY backend/models/model.weights.h5 ./models/model.weights.h5
 
 # Copy the inference service script
 COPY backend/scripts/ml_service.py ./ml_service.py

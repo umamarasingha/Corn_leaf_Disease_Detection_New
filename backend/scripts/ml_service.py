@@ -36,13 +36,15 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _LOCAL_MODEL_DIR = os.path.join(_SCRIPT_DIR, "..", "models")
 _DOCKER_MODEL_DIR = os.path.join(os.getcwd(), "models")
 MODEL_DIR = _LOCAL_MODEL_DIR if os.path.isdir(_LOCAL_MODEL_DIR) else _DOCKER_MODEL_DIR
-MODEL_PATH = os.path.join(MODEL_DIR, "corn_leaf_model.h5")
+MODEL_H5_PATH = os.path.join(MODEL_DIR, "corn_leaf_model.h5")
+MODEL_CONFIG_PATH = os.path.join(MODEL_DIR, "config.json")
+MODEL_WEIGHTS_PATH = os.path.join(MODEL_DIR, "model.weights.h5")
 
 # Disease class names – must match the alphabetical order of training labels
 DISEASE_CLASSES = ["Blight", "Common Rust", "Gray Leaf Spot", "Healthy"]
 
 model = None
-INPUT_SIZE = 256  # default, updated after model loads
+INPUT_SIZE = 224  # MobileNetV2 default input size
 
 
 def load_model():
@@ -52,39 +54,52 @@ def load_model():
         import tensorflow as tf  # noqa: F401
         log.info("TensorFlow %s imported successfully", tf.__version__)
 
-        try:
-            import keras
-            log.info("Keras %s", keras.__version__)
-        except Exception:
-            pass
+        import keras
+        log.info("Keras %s", keras.__version__)
 
-        if not os.path.isfile(MODEL_PATH):
-            log.error("Model file not found at %s", MODEL_PATH)
-            model = None
-            return
-
-        log.info("Loading model from %s (%.1f MB) …", MODEL_PATH,
-                 os.path.getsize(MODEL_PATH) / 1e6)
-
-        # Try multiple loading strategies
         loaded = None
-        for strategy in ["compile_false", "keras_direct", "default"]:
+
+        # Strategy 1: Load from Keras 3 native format (config.json + model.weights.h5)
+        if os.path.isfile(MODEL_CONFIG_PATH) and os.path.isfile(MODEL_WEIGHTS_PATH):
+            log.info("Found Keras 3 native format files")
+            log.info("  config.json: %s", MODEL_CONFIG_PATH)
+            log.info("  model.weights.h5: %.1f MB", os.path.getsize(MODEL_WEIGHTS_PATH) / 1e6)
             try:
-                if strategy == "compile_false":
-                    log.info("  Trying: tf.keras.models.load_model(compile=False)")
-                    loaded = tf.keras.models.load_model(MODEL_PATH, compile=False)
-                elif strategy == "keras_direct":
-                    import keras
-                    log.info("  Trying: keras.saving.load_model()")
-                    loaded = keras.saving.load_model(MODEL_PATH, compile=False)
-                else:
-                    log.info("  Trying: default load_model()")
-                    loaded = tf.keras.models.load_model(MODEL_PATH)
-                log.info("  Strategy '%s' succeeded!", strategy)
-                break
+                log.info("  Trying: keras.saving.load_model() from directory")
+                loaded = keras.saving.load_model(MODEL_DIR, compile=False)
+                log.info("  Keras 3 native format loaded successfully!")
             except Exception as e:
-                log.warning("  Strategy '%s' failed: %s", strategy, e)
+                log.warning("  Keras 3 native format failed: %s", e)
                 loaded = None
+
+            if loaded is None:
+                try:
+                    log.info("  Trying: reconstruct from config + weights")
+                    with open(MODEL_CONFIG_PATH, "r") as f:
+                        config = json.load(f)
+                    loaded = keras.saving.deserialize_keras_object(config)
+                    loaded.load_weights(MODEL_WEIGHTS_PATH)
+                    log.info("  Config + weights loaded successfully!")
+                except Exception as e:
+                    log.warning("  Config + weights failed: %s", e)
+                    loaded = None
+
+        # Strategy 2: Load from H5 file
+        if loaded is None and os.path.isfile(MODEL_H5_PATH):
+            log.info("Trying H5 file: %s (%.1f MB)", MODEL_H5_PATH,
+                     os.path.getsize(MODEL_H5_PATH) / 1e6)
+            for method_name, method in [
+                ("keras compile=False", lambda: keras.saving.load_model(MODEL_H5_PATH, compile=False)),
+                ("tf.keras compile=False", lambda: tf.keras.models.load_model(MODEL_H5_PATH, compile=False)),
+            ]:
+                try:
+                    log.info("  Trying: %s", method_name)
+                    loaded = method()
+                    log.info("  %s succeeded!", method_name)
+                    break
+                except Exception as e:
+                    log.warning("  %s failed: %s", method_name, e)
+                    loaded = None
 
         if loaded is None:
             log.error("All model loading strategies failed")
