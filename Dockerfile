@@ -35,4 +35,5 @@ RUN npm prune --production
 # Create uploads directory (Railway will mount a volume here if configured)
 RUN mkdir -p ./uploads
 
-CMD ["node", "dist/app.js"]
+# ENTRYPOINT cannot be overridden by Railway's startCommand
+ENTRYPOINT ["node", "dist/app.js"]
