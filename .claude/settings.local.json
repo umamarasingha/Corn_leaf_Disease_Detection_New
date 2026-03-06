@@ -38,7 +38,8 @@
       "Bash(ls \"e:/Corn_leaf_Disease_Detection_New/.env\"*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://corn-leaf-backend-production.up.railway.app/api/auth/me\")",
       "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/\")",
-      "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/health\")"
+      "Bash(curl -s \"https://corn-leaf-backend-production.up.railway.app/health\")",
+      "Bash(npm install --package-lock-only)"
     ]
   }
 }

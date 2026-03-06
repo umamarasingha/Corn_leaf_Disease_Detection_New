@@ -18,7 +18,7 @@ COPY backend/package*.json ./
 ENV NODE_ENV=development
 RUN npm ci && npm cache clean --force
 
-# Copy the rest of the backend
+# Copy the rest of the backend (cache-bust: v5)
 COPY backend/ .
 
 # Generate Prisma client
