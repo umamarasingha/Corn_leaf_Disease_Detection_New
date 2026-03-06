@@ -15,6 +15,7 @@ WORKDIR /app
 # Install Python dependencies
 RUN pip install --no-cache-dir \
         tensorflow-cpu==2.16.2 \
+        keras==3.10.0 \
         pillow \
         numpy
 

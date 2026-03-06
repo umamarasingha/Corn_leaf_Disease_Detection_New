@@ -42,28 +42,73 @@ MODEL_PATH = os.path.join(MODEL_DIR, "corn_leaf_model.h5")
 DISEASE_CLASSES = ["Blight", "Common Rust", "Gray Leaf Spot", "Healthy"]
 
 model = None
+INPUT_SIZE = 256  # default, updated after model loads
 
 
 def load_model():
-    global model
+    global model, INPUT_SIZE
     try:
         log.info("Importing TensorFlow …")
         import tensorflow as tf  # noqa: F401
         log.info("TensorFlow %s imported successfully", tf.__version__)
 
+        try:
+            import keras
+            log.info("Keras %s", keras.__version__)
+        except Exception:
+            pass
+
         if not os.path.isfile(MODEL_PATH):
-            log.error("❌ Model file not found at %s", MODEL_PATH)
+            log.error("Model file not found at %s", MODEL_PATH)
             model = None
             return
 
         log.info("Loading model from %s (%.1f MB) …", MODEL_PATH,
                  os.path.getsize(MODEL_PATH) / 1e6)
-        model = tf.keras.models.load_model(MODEL_PATH)
-        log.info("✅ Model loaded from %s", MODEL_PATH)
+
+        # Try multiple loading strategies
+        loaded = None
+        for strategy in ["compile_false", "keras_direct", "default"]:
+            try:
+                if strategy == "compile_false":
+                    log.info("  Trying: tf.keras.models.load_model(compile=False)")
+                    loaded = tf.keras.models.load_model(MODEL_PATH, compile=False)
+                elif strategy == "keras_direct":
+                    import keras
+                    log.info("  Trying: keras.saving.load_model()")
+                    loaded = keras.saving.load_model(MODEL_PATH, compile=False)
+                else:
+                    log.info("  Trying: default load_model()")
+                    loaded = tf.keras.models.load_model(MODEL_PATH)
+                log.info("  Strategy '%s' succeeded!", strategy)
+                break
+            except Exception as e:
+                log.warning("  Strategy '%s' failed: %s", strategy, e)
+                loaded = None
+
+        if loaded is None:
+            log.error("All model loading strategies failed")
+            model = None
+            return
+
+        model = loaded
+        log.info("Model loaded successfully")
         log.info("   Input shape : %s", model.input_shape)
         log.info("   Output shape: %s", model.output_shape)
+
+        # Auto-detect input size from model
+        try:
+            in_shape = model.input_shape
+            if isinstance(in_shape, list):
+                in_shape = in_shape[0]
+            if in_shape and len(in_shape) >= 3 and in_shape[1]:
+                INPUT_SIZE = int(in_shape[1])
+                log.info("   Using input size: %d x %d", INPUT_SIZE, INPUT_SIZE)
+        except Exception:
+            log.info("   Using default input size: %d x %d", INPUT_SIZE, INPUT_SIZE)
+
     except Exception as exc:
-        log.error("❌ Failed to load model: %s", exc)
+        log.error("Failed to load model: %s", exc)
         model = None
 
 
@@ -71,12 +116,12 @@ def load_model():
 # Image preprocessing
 # ---------------------------------------------------------------------------
 def preprocess_image(image_bytes: bytes):
-    """Decode image bytes and return a (1, 256, 256, 3) float32 numpy array."""
+    """Decode image bytes and return a (1, N, N, 3) float32 numpy array."""
     from PIL import Image  # type: ignore
     import numpy as np
 
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = img.resize((256, 256))
+    img = img.resize((INPUT_SIZE, INPUT_SIZE))
     arr = np.array(img, dtype=np.float32) / 255.0
     return arr[np.newaxis, ...]  # add batch dimension
 
