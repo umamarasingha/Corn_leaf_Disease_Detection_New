@@ -54,6 +54,7 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'privacy' | 'preferences'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -123,7 +124,9 @@ const Settings: React.FC = () => {
       
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || 'Failed to save settings';
+      setErrorMessage(msg);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {
@@ -133,27 +136,37 @@ const Settings: React.FC = () => {
 
   const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setErrorMessage('New passwords do not match.');
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), 4000);
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setErrorMessage('New password must be at least 6 characters.');
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return;
     }
 
     setIsLoading(true);
     try {
-      // Call real API for password change
       await apiService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      
+
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
-      
+
+      setErrorMessage('');
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || 'Failed to change password';
+      setErrorMessage(msg);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), 4000);
     } finally {
       setIsLoading(false);
     }
@@ -676,7 +689,7 @@ const Settings: React.FC = () => {
             <AlertTriangle className="h-5 w-5" />
           )}
           <span className="text-sm font-medium">
-            {saveStatus === 'success' ? 'Settings saved successfully!' : 'Failed to save settings'}
+            {saveStatus === 'success' ? 'Settings saved successfully!' : (errorMessage || 'Failed to save settings')}
           </span>
         </div>
       )}

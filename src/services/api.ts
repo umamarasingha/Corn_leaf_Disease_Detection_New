@@ -166,10 +166,13 @@ api.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      console.warn('Unauthorized access - clearing token and redirecting to login');
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Don't redirect for password-change — 401 there means wrong current password
+      const url = error?.config?.url || '';
+      if (!url.includes('/change-password')) {
+        console.warn('Unauthorized access - clearing token and redirecting to login');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
