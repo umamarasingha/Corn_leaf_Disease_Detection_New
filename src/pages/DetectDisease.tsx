@@ -19,6 +19,7 @@ const DetectDisease: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lowConfidence, setLowConfidence] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,6 +120,7 @@ const DetectDisease: React.FC = () => {
     if (!selectedImage) return;
 
     setIsAnalyzing(true);
+    setLowConfidence(false);
 
     try {
       // Always analyze through backend API so detection is persisted in DB
@@ -128,15 +130,20 @@ const DetectDisease: React.FC = () => {
 
       const apiResult = await apiService.analyzeImage(file);
 
-      setDetectionResult({
-        disease: apiResult.disease,
-        confidence: apiResult.confidence,
-        severity: apiResult.severity,
-        description: apiResult.description,
-        treatment: apiResult.treatment,
-        prevention: apiResult.prevention,
-        timestamp: new Date().toISOString()
-      });
+      if (apiResult.confidence < 60) {
+        setLowConfidence(true);
+        setDetectionResult(null);
+      } else {
+        setDetectionResult({
+          disease: apiResult.disease,
+          confidence: apiResult.confidence,
+          severity: apiResult.severity,
+          description: apiResult.description,
+          treatment: apiResult.treatment,
+          prevention: apiResult.prevention,
+          timestamp: new Date().toISOString()
+        });
+      }
 
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -151,6 +158,7 @@ const DetectDisease: React.FC = () => {
     setSelectedImage(null);
     setDetectionResult(null);
     setUploadError(null);
+    setLowConfidence(false);
   };
 
   const getSeverityColor = (severity: string) => {
@@ -280,6 +288,24 @@ const DetectDisease: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Low Confidence Warning */}
+          {lowConfidence && (
+            <div className="card p-6 flex flex-col items-center justify-center text-center space-y-3">
+              <div className="h-16 w-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-8 w-8 text-yellow-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {t('Please upload a corn leaf image')}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('The uploaded image does not appear to be a corn leaf or the image quality is too low. Please try again with a clearer corn leaf photo.')}
+              </p>
+              <button onClick={resetDetection} className="btn-primary mt-2">
+                {t('Try Again')}
+              </button>
+            </div>
+          )}
 
           {/* Detection Result */}
           {detectionResult && (
