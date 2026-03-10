@@ -64,17 +64,24 @@ model Like {
 }
 
 model Detection {
-  id          String    @id @default(uuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  imageUrl    String
-  disease     String
-  confidence  Float
-  severity    String
-  description String
-  treatment   String
-  prevention  String
-  createdAt   DateTime  @default(now())
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl        String
+  disease         String
+  confidence      Float
+  severity        String
+  description     String
+  treatment       String
+  prevention      String
+  // Pest detection fields (optional – null when pest model unavailable)
+  pest            String?
+  pestConfidence  Float?
+  pestSeverity    String?
+  pestDescription String?
+  pestTreatment   String?
+  pestPrevention  String?
+  createdAt       DateTime  @default(now())
 }
 
 model News {

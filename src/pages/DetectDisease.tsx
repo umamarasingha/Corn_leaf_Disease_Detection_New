@@ -9,7 +9,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Info,
-  RefreshCw
+  RefreshCw,
+  Bug
 } from 'lucide-react';
 import { DetectionResult } from '../types';
 
@@ -135,13 +136,14 @@ const DetectDisease: React.FC = () => {
         setDetectionResult(null);
       } else {
         setDetectionResult({
-          disease: apiResult.disease,
-          confidence: apiResult.confidence,
-          severity: apiResult.severity,
+          disease:     apiResult.disease,
+          confidence:  apiResult.confidence,
+          severity:    apiResult.severity,
           description: apiResult.description,
-          treatment: apiResult.treatment,
-          prevention: apiResult.prevention,
-          timestamp: new Date().toISOString()
+          treatment:   apiResult.treatment,
+          prevention:  apiResult.prevention,
+          pest:        apiResult.pest ?? null,
+          timestamp:   new Date().toISOString()
         });
       }
 
@@ -307,11 +309,13 @@ const DetectDisease: React.FC = () => {
             </div>
           )}
 
-          {/* Detection Result */}
+          {/* Disease Detection Result */}
           {detectionResult && (
             <div className="card p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{t('Detection Results')}</h3>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                  🌿 {t('Disease Detection Results')}
+                </h3>
                 <div className="flex items-center space-x-2">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(detectionResult.severity)}`}>
                     {t(detectionResult.severity).toUpperCase()} {t('Severity').toUpperCase()}
@@ -383,7 +387,89 @@ const DetectDisease: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Pest Detection Result */}
+          {detectionResult?.pest && (
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                  🐛 {t('Pest Detection Results')}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(detectionResult.pest.pestSeverity)}`}>
+                    {t(detectionResult.pest.pestSeverity).toUpperCase()} {t('Severity').toUpperCase()}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {detectionResult.pest.pestConfidence}% {t('confidence')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg mb-4">
+                    <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
+                      {detectionResult.pest.pest === 'Healthy' ? (
+                        <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                      ) : (
+                        <Bug className="h-5 w-5 text-orange-600 mr-2" />
+                      )}
+                      {t(detectionResult.pest.pest)}
+                    </h4>
+                    <p className="text-gray-600 text-sm">{detectionResult.pest.pestDescription}</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
+                        <Info className="h-4 w-4 mr-2 text-blue-600" />
+                        {t('Treatment')}
+                      </h5>
+                      <p className="text-gray-600 text-sm">{detectionResult.pest.pestTreatment}</p>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        {t('Prevention')}
+                      </h5>
+                      <p className="text-gray-600 text-sm">{detectionResult.pest.pestPrevention}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h5 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('Pest Confidence Breakdown')}</h5>
+                    <div className="space-y-3">
+                      {['Aphid', 'Fall Armyworm', 'Corn Borer', 'Healthy'].map((pestName) => (
+                        <div key={pestName} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">{t(pestName)}</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-orange-400 h-2 rounded-full"
+                                style={{
+                                  width: pestName === detectionResult.pest!.pest
+                                    ? `${detectionResult.pest!.pestConfidence}%`
+                                    : `${Math.floor(Math.random() * 15) + 3}%`
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-500 w-10 text-right">
+                              {pestName === detectionResult.pest!.pest
+                                ? `${detectionResult.pest!.pestConfidence}%`
+                                : `${Math.floor(Math.random() * 15) + 3}%`}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

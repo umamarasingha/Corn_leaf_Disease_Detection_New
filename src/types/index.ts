@@ -105,6 +105,15 @@ export interface ActivityItem {
   details: string;
 }
 
+export interface PestResult {
+  pest: string;
+  pestConfidence: number;
+  pestSeverity: 'low' | 'medium' | 'high';
+  pestDescription: string;
+  pestTreatment: string;
+  pestPrevention: string;
+}
+
 // Enhanced types for better API integration
 export interface DetectionResult {
   disease: string;
@@ -115,6 +124,7 @@ export interface DetectionResult {
   prevention: string;
   timestamp: string;
   imageUrl?: string;
+  pest?: PestResult | null;
 }
 
 export interface ChatResponse {
