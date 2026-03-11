@@ -74,19 +74,26 @@ class AIService {
   }
 
   async predictDisease(imageBase64: string): Promise<DiseasePrediction> {
-    if (!this.isPythonServiceAvailable && Date.now() - this.lastPythonCheck > 30_000) {
+    // Always re-check if service was marked unavailable
+    if (!this.isPythonServiceAvailable) {
+      console.log('[AI] ML service marked unavailable, re-checking...');
       await this.checkPythonService();
     }
 
     if (this.isPythonServiceAvailable) {
-      try { return await this.predictViaPython(imageBase64); }
-      catch (e) {
-        console.warn('Python ML service call failed:', e instanceof Error ? e.message : e);
+      try {
+        console.log('[AI] Calling ML service for prediction (image size: %d bytes)', imageBase64.length);
+        const result = await this.predictViaPython(imageBase64);
+        console.log('[AI] ML prediction success: disease=%s confidence=%d', result.disease, result.confidence);
+        return result;
+      } catch (e) {
+        console.error('[AI] Python ML service call FAILED:', e instanceof Error ? e.message : e);
+        // Don't permanently disable - retry on next request
         this.isPythonServiceAvailable = false;
       }
     }
 
-    console.warn('No ML backend available - returning mock prediction');
+    console.warn('[AI] USING MOCK PREDICTION - ML service not available');
     return this.mockPrediction();
   }
 
@@ -147,8 +154,8 @@ class AIService {
           } catch (e) { reject(e); }
         });
       });
-      req.on('error', reject);
-      req.setTimeout(20000, () => { req.destroy(); reject(new Error('ML service timeout')); });
+      req.on('error', (err) => { console.error('[AI] ML request error:', err.message); reject(err); });
+      req.setTimeout(60000, () => { req.destroy(); reject(new Error('ML service timeout (60s)')); });
       req.write(body);
       req.end();
     });

@@ -86,36 +86,74 @@ def _load_h5_model(path: str, label: str):
     return None
 
 
+def _build_model_from_tfjs_json(json_path: str, label: str):
+    """Build a Keras model from a TF.js model.json topology."""
+    import tensorflow as tf
+    try:
+        with open(json_path, "r") as f:
+            data = json.load(f)
+        topology = data.get("modelTopology", {})
+        model_config = topology.get("model_config", {})
+        if not model_config:
+            return None
+        m = tf.keras.models.model_from_config(model_config)
+        log.info("[%s] Built model from TF.js model.json. Input=%s Output=%s", label, m.input_shape, m.output_shape)
+        return m
+    except Exception as e:
+        log.warning("[%s] Failed to build model from model.json: %s", label, e)
+        return None
+
+
 def _load_keras3_model(model_dir: str, label: str):
     """Load a Keras 3 native-format model (config.json + model.weights.h5)."""
     config_path  = os.path.join(model_dir, "config.json")
     weights_path = os.path.join(model_dir, "model.weights.h5")
-    if not (os.path.isfile(config_path) and os.path.isfile(weights_path)):
-        log.warning("[%s] Keras 3 native files not found in %s", label, model_dir)
-        return None
+    tfjs_path    = os.path.join(model_dir, "model.json")
 
-    log.info("[%s] Found Keras 3 native format (config.json + model.weights.h5)", label)
+    # Strategy 1: Keras 3 native format (config.json + model.weights.h5)
+    if os.path.isfile(config_path) and os.path.isfile(weights_path):
+        log.info("[%s] Found Keras 3 native format (config.json + model.weights.h5)", label)
 
-    # Try loading the whole directory
-    try:
-        import keras
-        m = keras.saving.load_model(model_dir, compile=False)
-        log.info("[%s] Keras 3 directory load succeeded. Input=%s Output=%s", label, m.input_shape, m.output_shape)
-        return m
-    except Exception as e:
-        log.warning("[%s] Keras 3 directory load failed: %s", label, e)
+        try:
+            import keras
+            m = keras.saving.load_model(model_dir, compile=False)
+            log.info("[%s] Keras 3 directory load succeeded. Input=%s Output=%s", label, m.input_shape, m.output_shape)
+            return m
+        except Exception as e:
+            log.warning("[%s] Keras 3 directory load failed: %s", label, e)
 
-    # Try config + weights separately
-    try:
-        import keras
-        with open(config_path, "r") as f:
-            config = json.load(f)
-        m = keras.saving.deserialize_keras_object(config)
-        m.load_weights(weights_path)
-        log.info("[%s] Config + weights load succeeded.", label)
-        return m
-    except Exception as e:
-        log.warning("[%s] Config + weights load failed: %s", label, e)
+        try:
+            import keras
+            with open(config_path, "r") as f:
+                config = json.load(f)
+            m = keras.saving.deserialize_keras_object(config)
+            m.load_weights(weights_path)
+            log.info("[%s] Config + weights load succeeded.", label)
+            return m
+        except Exception as e:
+            log.warning("[%s] Config + weights load failed: %s", label, e)
+
+    # Strategy 2: Build model from TF.js model.json + load weights from model.weights.h5
+    if os.path.isfile(tfjs_path) and os.path.isfile(weights_path):
+        log.info("[%s] Trying TF.js model.json architecture + model.weights.h5", label)
+        m = _build_model_from_tfjs_json(tfjs_path, label)
+        if m is not None:
+            try:
+                m.load_weights(weights_path)
+                log.info("[%s] model.json + model.weights.h5 load succeeded. Input=%s Output=%s", label, m.input_shape, m.output_shape)
+                return m
+            except Exception as e:
+                log.warning("[%s] model.json + model.weights.h5 failed: %s", label, e)
+
+    # Strategy 3: Try loading model.weights.h5 as a standalone H5 model
+    if os.path.isfile(weights_path):
+        log.info("[%s] Trying model.weights.h5 as standalone H5 model", label)
+        m = _load_h5_model(weights_path, label)
+        if m is not None:
+            return m
+
+    if not os.path.isfile(config_path) and not os.path.isfile(tfjs_path):
+        log.warning("[%s] No pest model files found in %s", label, model_dir)
 
     return None
 
@@ -168,6 +206,68 @@ def load_models():
 
 
 # ---------------------------------------------------------------------------
+# Image validation – detect non-corn-leaf images
+# ---------------------------------------------------------------------------
+def _is_corn_leaf_image(image_bytes: bytes) -> float:
+    """
+    Return a 0.0–1.0 score indicating how likely this image is a corn leaf.
+    Uses colour-histogram heuristics:
+      - Corn leaves are predominantly green (high G channel relative to R/B).
+      - Checks that a meaningful portion of pixels are in the green/yellow-green
+        range typical of plant foliage (including diseased brownish-green).
+    """
+    from PIL import Image
+    import numpy as np
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    img = img.resize((128, 128))
+    arr = np.array(img, dtype=np.float32)
+
+    r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+    total_pixels = r.size
+
+    # --- Metric 1: Green-dominant pixels (G > R and G > B) ---
+    green_dominant = np.sum((g > r) & (g > b)) / total_pixels
+
+    # --- Metric 2: Foliage-like hue pixels (green, yellow-green, brown-green) ---
+    # Includes healthy green, yellowing, and brown/rust disease colours
+    max_ch = np.maximum(np.maximum(r, g), b)
+    min_ch = np.minimum(np.minimum(r, g), b)
+    diff = max_ch - min_ch + 1e-6
+
+    # Pixels that are not too dark and not too bright (leaf-like)
+    brightness_ok = (max_ch > 30) & (max_ch < 245)
+
+    # Saturation check – not too grey
+    saturation = diff / (max_ch + 1e-6)
+    sat_ok = saturation > 0.08
+
+    # Green-ish or yellow-green hue
+    hue_green = (g >= r * 0.7) & (g >= b * 0.8) & brightness_ok & sat_ok
+    foliage_ratio = np.sum(hue_green) / total_pixels
+
+    # --- Metric 3: Average green channel strength ---
+    mean_g = np.mean(g)
+    mean_r = np.mean(r)
+    green_strength = 1.0 if mean_g > mean_r else (mean_g / (mean_r + 1e-6))
+    green_strength = min(green_strength, 1.0)
+
+    # Combine metrics
+    score = (green_dominant * 0.35) + (foliage_ratio * 0.45) + (green_strength * 0.20)
+
+    # Generous threshold – we only want to reject clearly non-plant images
+    log.debug("Leaf score: %.3f (green_dom=%.2f foliage=%.2f g_str=%.2f)",
+              score, green_dominant, foliage_ratio, green_strength)
+
+    return float(score)
+
+
+# Minimum leaf-score to accept the image as a valid corn leaf input.
+# Below this, confidence is heavily penalised.
+LEAF_SCORE_THRESHOLD = 0.20
+
+
+# ---------------------------------------------------------------------------
 # Image preprocessing
 # ---------------------------------------------------------------------------
 def preprocess_image(image_bytes: bytes, input_size: int):
@@ -182,15 +282,31 @@ def preprocess_image(image_bytes: bytes, input_size: int):
 # ---------------------------------------------------------------------------
 # Prediction helpers
 # ---------------------------------------------------------------------------
-def _run_model(model, image_bytes, input_size, classes):
+def _run_model(model, image_bytes, input_size, classes, leaf_score=1.0):
     import numpy as np
     tensor = preprocess_image(image_bytes, input_size)
     preds  = model.predict(tensor, verbose=0)[0].tolist()
     idx    = int(np.argmax(preds))
     label  = classes[idx] if idx < len(classes) else "Unknown"
+
+    raw_confidence = preds[idx]
+
+    # If the image doesn't look like a corn leaf, penalise confidence
+    if leaf_score < LEAF_SCORE_THRESHOLD:
+        # Scale confidence way down so the frontend <60% check catches it
+        penalty = leaf_score / LEAF_SCORE_THRESHOLD  # 0.0 – 1.0
+        adjusted_confidence = raw_confidence * penalty * 0.5  # heavy penalty
+        log.info("Non-leaf image detected (leaf_score=%.3f). Confidence %.1f%% -> %.1f%%",
+                 leaf_score, raw_confidence * 100, adjusted_confidence * 100)
+        return {
+            "name":          label,
+            "confidence":    adjusted_confidence,
+            "probabilities": {c: preds[i] * penalty * 0.5 for i, c in enumerate(classes)},
+        }
+
     return {
         "name":          label,
-        "confidence":    preds[idx],
+        "confidence":    raw_confidence,
         "probabilities": {c: preds[i] for i, c in enumerate(classes)},
     }
 
@@ -201,7 +317,8 @@ def predict_disease(image_base64: str) -> dict:
     if "," in image_base64:
         image_base64 = image_base64.split(",", 1)[1]
     image_bytes = base64.b64decode(image_base64)
-    result = _run_model(disease_model, image_bytes, DISEASE_INPUT_SIZE, DISEASE_CLASSES)
+    leaf_score = _is_corn_leaf_image(image_bytes)
+    result = _run_model(disease_model, image_bytes, DISEASE_INPUT_SIZE, DISEASE_CLASSES, leaf_score)
     return {"disease": result["name"], "confidence": result["confidence"],
             "probabilities": result["probabilities"]}
 
@@ -212,7 +329,8 @@ def predict_pest(image_base64: str) -> dict:
     if "," in image_base64:
         image_base64 = image_base64.split(",", 1)[1]
     image_bytes = base64.b64decode(image_base64)
-    result = _run_model(pest_model, image_bytes, PEST_INPUT_SIZE, PEST_CLASSES)
+    leaf_score = _is_corn_leaf_image(image_bytes)
+    result = _run_model(pest_model, image_bytes, PEST_INPUT_SIZE, PEST_CLASSES, leaf_score)
     return {"pest": result["name"], "confidence": result["confidence"],
             "probabilities": result["probabilities"]}
 
@@ -223,11 +341,15 @@ def predict_all(image_base64: str) -> dict:
     b64 = image_base64.split(",", 1)[1] if "," in image_base64 else image_base64
     image_bytes = base64.b64decode(b64)
 
+    # Check if image looks like a corn leaf
+    leaf_score = _is_corn_leaf_image(image_bytes)
+    log.info("Leaf validation score: %.3f (threshold: %.2f)", leaf_score, LEAF_SCORE_THRESHOLD)
+
     result: dict = {}
 
     if disease_model is not None:
         try:
-            d = _run_model(disease_model, image_bytes, DISEASE_INPUT_SIZE, DISEASE_CLASSES)
+            d = _run_model(disease_model, image_bytes, DISEASE_INPUT_SIZE, DISEASE_CLASSES, leaf_score)
             result["disease"]             = d["name"]
             result["diseaseConfidence"]   = d["confidence"]
             result["diseaseProbabilities"] = d["probabilities"]
@@ -239,7 +361,7 @@ def predict_all(image_base64: str) -> dict:
 
     if pest_model is not None:
         try:
-            p = _run_model(pest_model, image_bytes, PEST_INPUT_SIZE, PEST_CLASSES)
+            p = _run_model(pest_model, image_bytes, PEST_INPUT_SIZE, PEST_CLASSES, leaf_score)
             result["pest"]             = p["name"]
             result["pestConfidence"]   = p["confidence"]
             result["pestProbabilities"] = p["probabilities"]

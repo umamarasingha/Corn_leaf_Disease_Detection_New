@@ -1,0 +1,11 @@
+node_modules/
+android/
+ios/
+.gradle/
+build/
+dist/
+*.apk
+.git/
+maize_disease/
+functions/
+public/

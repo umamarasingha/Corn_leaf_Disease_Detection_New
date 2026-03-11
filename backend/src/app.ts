@@ -40,6 +40,7 @@ async function bootstrapExpress() {
     dotenv.config();
 
     const app = express();
+    app.set('trust proxy', 1);
 
     const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
       .split(',')
